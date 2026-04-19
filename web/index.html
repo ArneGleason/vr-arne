@@ -23,19 +23,22 @@
       background="color: #d9f4ff"
       renderer="colorManagement: true"
       xr-mode-ui="enabled: true"
+      webxr="referenceSpaceType: local-floor; requiredFeatures: local-floor"
     >
-      <a-entity position="0 1.6 0">
-        <a-camera></a-camera>
-      </a-entity>
+      <a-entity id="rig" position="0 0 0">
+        <a-entity id="head" camera look-controls position="0 1.6 0"></a-entity>
 
-      <a-entity
-        laser-controls="hand: left"
-        raycaster="objects: .interactable"
-      ></a-entity>
-      <a-entity
-        laser-controls="hand: right"
-        raycaster="objects: .interactable"
-      ></a-entity>
+        <a-entity
+          id="left-hand"
+          laser-controls="hand: left"
+          raycaster="objects: .interactable; far: 8"
+        ></a-entity>
+        <a-entity
+          id="right-hand"
+          laser-controls="hand: right"
+          raycaster="objects: .interactable; far: 8"
+        ></a-entity>
+      </a-entity>
 
       <a-plane
         position="0 0 -4"
@@ -72,7 +75,7 @@
       ></a-sphere>
 
       <a-text
-        value="Click the cube"
+        value="Point and trigger the cube"
         position="0 2.4 -3"
         align="center"
         color="#17324d"

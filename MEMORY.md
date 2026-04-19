@@ -21,6 +21,7 @@ Create a small experimental VR app that is easy to resume across different agent
 - Framework choice changed from native-first to web-first
 - Static WebXR starter added under `web/`
 - GitHub Pages deployment setup in progress
+- Quest controller and viewpoint alignment fix applied by moving camera and controllers into a shared rig with explicit `local-floor` WebXR space
 
 ## Why web first
 
@@ -36,6 +37,7 @@ Create a small experimental VR app that is easy to resume across different agent
 3. Verify GitHub Pages publishing works.
 4. Confirm immersive VR entry works on Quest 3.
 5. Pick the first tiny app concept.
+6. Verify controller alignment feels correct on-device.
 
 ## Open questions
 
@@ -60,3 +62,4 @@ Create a small experimental VR app that is easy to resume across different agent
 - Switched the active direction to A-Frame + WebXR for easier link-based sharing.
 - Added a minimal A-Frame starter app under `web/`.
 - Prepared the repo for GitHub Pages deployment.
+- Adjusted the scene rig so Quest headset and controller tracking share the same floor-relative origin.
