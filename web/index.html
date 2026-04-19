@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>vr-arne</title>
+    <meta
+      name="description"
+      content="A small WebXR prototype for Meta Quest 3."
+    />
+    <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+    <link rel="stylesheet" href="./styles.css" />
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <div class="overlay">
+      <h1>vr-arne</h1>
+      <p>Open this page in Quest Browser and enter VR.</p>
+      <p>Desktop preview works too, but Quest 3 is the target.</p>
+    </div>
+
+    <a-scene
+      background="color: #d9f4ff"
+      renderer="colorManagement: true"
+      xr-mode-ui="enabled: true"
+    >
+      <a-entity position="0 1.6 0">
+        <a-camera></a-camera>
+      </a-entity>
+
+      <a-entity
+        laser-controls="hand: left"
+        raycaster="objects: .interactable"
+      ></a-entity>
+      <a-entity
+        laser-controls="hand: right"
+        raycaster="objects: .interactable"
+      ></a-entity>
+
+      <a-plane
+        position="0 0 -4"
+        rotation="-90 0 0"
+        width="12"
+        height="12"
+        color="#b7df95"
+        shadow
+      ></a-plane>
+
+      <a-box
+        id="play-cube"
+        class="interactable"
+        position="0 1.4 -3"
+        rotation="0 35 0"
+        depth="0.6"
+        height="0.6"
+        width="0.6"
+        color="#ff7a59"
+        shadow
+      ></a-box>
+
+      <a-cylinder
+        position="-1.4 0.75 -3.5"
+        radius="0.35"
+        height="1.5"
+        color="#3c6e71"
+      ></a-cylinder>
+
+      <a-sphere
+        position="1.35 1.2 -4.4"
+        radius="0.75"
+        color="#ffd166"
+      ></a-sphere>
+
+      <a-text
+        value="Click the cube"
+        position="0 2.4 -3"
+        align="center"
+        color="#17324d"
+        width="6"
+      ></a-text>
+
+      <a-sky color="#f2fbff"></a-sky>
+    </a-scene>
+  </body>
+</html>

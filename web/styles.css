@@ -1,0 +1,32 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  background: #d9f4ff;
+}
+
+.overlay {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 2;
+  max-width: 20rem;
+  padding: 0.85rem 1rem;
+  color: #17324d;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(23, 50, 77, 0.1);
+  border-radius: 0.9rem;
+  backdrop-filter: blur(8px);
+}
+
+.overlay h1 {
+  margin: 0 0 0.45rem;
+  font-size: 1.15rem;
+}
+
+.overlay p {
+  margin: 0.25rem 0;
+  line-height: 1.35;
+  font-size: 0.95rem;
+}
