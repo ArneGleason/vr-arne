@@ -9,16 +9,16 @@ AFRAME.registerComponent("flight-demo", {
     this.bounds = {
       minX: -3.9,
       maxX: 3.9,
-      minZ: -14,
-      maxZ: -1,
+      minZ: -11.5,
+      maxZ: 0.8,
     };
 
-    this.shipTarget = new THREE.Vector3(0, 0.45, -5.8);
-    this.shipPosition = new THREE.Vector3(0, 0.45, -5.8);
+    this.shipTarget = new THREE.Vector3(0, 0.45, -2.2);
+    this.shipPosition = new THREE.Vector3(0, 0.45, -2.2);
     this.previousShipPosition = this.shipPosition.clone();
 
     this.scrollRows = [];
-    this.rowSpacing = 1.1;
+    this.rowSpacing = 0.95;
     this.scrollSpeed = 3.8;
 
     this.buildGroundMarkers();
@@ -28,7 +28,7 @@ AFRAME.registerComponent("flight-demo", {
 
   buildGroundMarkers() {
     const palette = ["#f7ede2", "#f4d35e", "#9ad1d4"];
-    const rowCount = 12;
+    const rowCount = 14;
 
     for (let index = 0; index < rowCount; index += 1) {
       const row = document.createElement("a-entity");

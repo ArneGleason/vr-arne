@@ -24,6 +24,7 @@ Create a small experimental VR app that is easy to resume across different agent
 - Quest controller and viewpoint alignment fix applied by moving camera and controllers into a shared rig with explicit `local-floor` WebXR space
 - Prototype shifted toward a forward-scrolling shooter feel with pointer-guided ship movement over a moving ground lane
 - Playfield perspective retuned so the lane begins near the player and fades into fog instead of reading as a distant horizon
+- Near-edge placement retuned so the steerable strip and ship can come back to the player's feet without the curved masking wall clipping the left side
 
 ## Why web first
 
@@ -67,3 +68,4 @@ Create a small experimental VR app that is easy to resume across different agent
 - Replaced the cube test with a first shooter-style motion prototype: ship steering plus scrolling ground markers.
 - Verified the live GitHub Pages deployment on Quest 3 and fixed the initial controller/view alignment issue.
 - Pulled the playfield back toward the player's feet and added fog plus soft masking to keep the space self-contained.
+- Extended the near steering range to the player's toes and removed the curved masking wall that was visibly cutting into the left side.
