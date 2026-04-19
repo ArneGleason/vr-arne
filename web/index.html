@@ -15,11 +15,12 @@
   <body>
     <div class="overlay">
       <h1>vr-arne</h1>
-      <p>Open this page in Quest Browser and enter VR.</p>
-      <p>Desktop preview works too, but Quest 3 is the target.</p>
+      <p>Point at the lane with your right controller.</p>
+      <p>The ship will glide toward your aim while the ground scrolls forward.</p>
     </div>
 
     <a-scene
+      flight-demo
       background="color: #d9f4ff"
       renderer="colorManagement: true"
       xr-mode-ui="enabled: true"
@@ -31,56 +32,106 @@
         <a-entity
           id="left-hand"
           laser-controls="hand: left"
-          raycaster="objects: .interactable; far: 8"
+          raycaster="objects: .nav-surface, .interactable; far: 20"
         ></a-entity>
         <a-entity
           id="right-hand"
           laser-controls="hand: right"
-          raycaster="objects: .interactable; far: 8"
+          raycaster="objects: .nav-surface, .interactable; far: 20"
         ></a-entity>
       </a-entity>
 
-      <a-plane
-        position="0 0 -4"
-        rotation="-90 0 0"
-        width="12"
-        height="12"
-        color="#b7df95"
-        shadow
-      ></a-plane>
+      <a-entity light="type: ambient; color: #ffffff; intensity: 0.85"></a-entity>
+      <a-entity
+        light="type: directional; color: #fff4d6; intensity: 0.8"
+        position="1.5 4 1"
+      ></a-entity>
 
-      <a-box
-        id="play-cube"
-        class="interactable"
-        position="0 1.4 -3"
-        rotation="0 35 0"
-        depth="0.6"
-        height="0.6"
-        width="0.6"
-        color="#ff7a59"
-        shadow
-      ></a-box>
+      <a-entity id="desktop-cursor" cursor="rayOrigin: mouse" raycaster="objects: .nav-surface"></a-entity>
 
-      <a-cylinder
-        position="-1.4 0.75 -3.5"
-        radius="0.35"
-        height="1.5"
-        color="#3c6e71"
-      ></a-cylinder>
+      <a-entity id="playfield">
+        <a-plane
+          position="0 0.02 -14"
+          rotation="-90 0 0"
+          width="8.5"
+          height="18"
+          color="#4c956c"
+          material="shader: flat"
+        ></a-plane>
 
-      <a-sphere
-        position="1.35 1.2 -4.4"
-        radius="0.75"
-        color="#ffd166"
-      ></a-sphere>
+        <a-plane
+          id="nav-surface"
+          class="nav-surface"
+          position="0 0.06 -14"
+          rotation="-90 0 0"
+          width="8"
+          height="18"
+          color="#ffffff"
+          material="transparent: true; opacity: 0.001; side: double"
+        ></a-plane>
 
-      <a-text
-        value="Point and trigger the cube"
-        position="0 2.4 -3"
-        align="center"
-        color="#17324d"
-        width="6"
-      ></a-text>
+        <a-entity id="ground-markers"></a-entity>
+
+        <a-box
+          position="-4.35 0.2 -14"
+          width="0.16"
+          height="0.4"
+          depth="18"
+          color="#17324d"
+        ></a-box>
+        <a-box
+          position="4.35 0.2 -14"
+          width="0.16"
+          height="0.4"
+          depth="18"
+          color="#17324d"
+        ></a-box>
+
+        <a-entity id="target-marker" position="0 0.08 -11">
+          <a-ring
+            rotation="-90 0 0"
+            radius-inner="0.18"
+            radius-outer="0.28"
+            color="#f4d35e"
+            material="shader: flat"
+          ></a-ring>
+        </a-entity>
+
+        <a-entity id="ship" position="0 0.65 -11">
+          <a-cone
+            radius-bottom="0.18"
+            radius-top="0.03"
+            height="0.7"
+            rotation="90 0 0"
+            color="#ff7a59"
+            material="shader: flat"
+          ></a-cone>
+          <a-box
+            position="0 0.02 0.05"
+            width="0.7"
+            height="0.05"
+            depth="0.24"
+            color="#f7ede2"
+            material="shader: flat"
+          ></a-box>
+          <a-box
+            position="0 0.12 0.1"
+            width="0.18"
+            height="0.12"
+            depth="0.18"
+            color="#17324d"
+            material="shader: flat"
+          ></a-box>
+        </a-entity>
+
+        <a-text
+          value="Point to steer"
+          position="0 1.6 -9"
+          align="center"
+          color="#17324d"
+          width="7"
+        ></a-text>
+      </a-entity>
 
       <a-sky color="#f2fbff"></a-sky>
     </a-scene>

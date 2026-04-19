@@ -7,7 +7,7 @@
 - Target device: Meta Quest 3
 - Current framework choice: A-Frame
 - XR stack: WebXR
-- Repo state: scaffolded documentation, static web app starter in progress
+- Repo state: live GitHub Pages prototype with first scrolling-flight interaction pass
 
 ## Goal
 
@@ -20,8 +20,9 @@ Create a small experimental VR app that is easy to resume across different agent
 - Git repo initialized
 - Framework choice changed from native-first to web-first
 - Static WebXR starter added under `web/`
-- GitHub Pages deployment setup in progress
+- GitHub Pages deployment working from `main`
 - Quest controller and viewpoint alignment fix applied by moving camera and controllers into a shared rig with explicit `local-floor` WebXR space
+- Prototype shifted toward a forward-scrolling shooter feel with pointer-guided ship movement over a moving ground lane
 
 ## Why web first
 
@@ -32,12 +33,11 @@ Create a small experimental VR app that is easy to resume across different agent
 
 ## Immediate next steps
 
-1. Test the starter locally in a desktop browser.
-2. Push the repo to GitHub.
-3. Verify GitHub Pages publishing works.
-4. Confirm immersive VR entry works on Quest 3.
-5. Pick the first tiny app concept.
-6. Verify controller alignment feels correct on-device.
+1. Test the new scrolling-flight motion on Quest 3.
+2. Tune the ship catch-up speed and playfield scale on-device.
+3. Decide whether steering should track continuously or only while holding a trigger.
+4. Add the first obstacle or target to fly around.
+5. Introduce basic firing once movement feels right.
 
 ## Open questions
 
@@ -63,3 +63,5 @@ Create a small experimental VR app that is easy to resume across different agent
 - Added a minimal A-Frame starter app under `web/`.
 - Prepared the repo for GitHub Pages deployment.
 - Adjusted the scene rig so Quest headset and controller tracking share the same floor-relative origin.
+- Replaced the cube test with a first shooter-style motion prototype: ship steering plus scrolling ground markers.
+- Verified the live GitHub Pages deployment on Quest 3 and fixed the initial controller/view alignment issue.
