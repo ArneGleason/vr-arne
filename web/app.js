@@ -1,3 +1,31 @@
+const debugPanel = document.querySelector("#debug-panel");
+const debugLog = document.querySelector("#debug-log");
+
+function reportDebug(message) {
+  if (!debugPanel || !debugLog) {
+    return;
+  }
+
+  debugPanel.hidden = false;
+  const timestamp = new Date().toLocaleTimeString();
+  debugLog.textContent = `[${timestamp}] ${message}\n${debugLog.textContent}`.slice(
+    0,
+    4000
+  );
+}
+
+window.addEventListener("error", (event) => {
+  reportDebug(`Error: ${event.message}`);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  const reason =
+    typeof event.reason === "string"
+      ? event.reason
+      : event.reason?.message || "Unknown rejection";
+  reportDebug(`Promise rejection: ${reason}`);
+});
+
 AFRAME.registerComponent("flight-demo", {
   init() {
     this.rightHand = document.querySelector("#right-hand");
@@ -769,6 +797,7 @@ AFRAME.registerComponent("flight-demo", {
       shot.lifetime -= deltaSeconds;
       shot.el.object3D.position.addScaledVector(shot.velocity, deltaSeconds);
       shot.velocity.y -= 4.8 * deltaSeconds;
+      const shotPosition = shot.el.object3D.getWorldPosition(this.tempWorldA);
 
       if (shot.groundGlow) {
         const remaining = Math.max(shot.lifetime / 1.5, 0);
@@ -783,7 +812,6 @@ AFRAME.registerComponent("flight-demo", {
         this.tutorialThrowTarget &&
         this.tutorialThrow?.getAttribute("visible")
       ) {
-        const shotPosition = shot.el.object3D.getWorldPosition(this.tempWorldA);
         const targetPosition = this.tutorialThrowTarget.object3D.getWorldPosition(
           this.tempWorldB
         );
@@ -907,15 +935,20 @@ AFRAME.registerComponent("flight-demo", {
   tick(_time, delta) {
     const deltaSeconds = Math.min(delta / 1000, 0.05);
 
-    this.updateTargetFromController();
-    this.pollTriggerControls();
-    this.updateShip(deltaSeconds);
-    this.updateGround(deltaSeconds);
-    this.updateHeldBoulder(deltaSeconds);
-    this.updateThrownBoulders(deltaSeconds);
-    this.updateLaunchedShots(deltaSeconds);
-    this.updateEnemies(deltaSeconds);
-    this.updateTutorialOutro(deltaSeconds);
+    try {
+      this.updateTargetFromController();
+      this.pollTriggerControls();
+      this.updateShip(deltaSeconds);
+      this.updateGround(deltaSeconds);
+      this.updateHeldBoulder(deltaSeconds);
+      this.updateThrownBoulders(deltaSeconds);
+      this.updateLaunchedShots(deltaSeconds);
+      this.updateEnemies(deltaSeconds);
+      this.updateTutorialOutro(deltaSeconds);
+    } catch (error) {
+      reportDebug(error?.stack || error?.message || "Unknown tick error");
+      throw error;
+    }
 
     if (this.targetMarker) {
       const pulse = 1 + Math.sin(performance.now() / 180) * 0.08;
