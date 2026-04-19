@@ -25,6 +25,7 @@ Create a small experimental VR app that is easy to resume across different agent
 - Prototype shifted toward a forward-scrolling shooter feel with pointer-guided ship movement over a moving ground lane
 - Playfield perspective retuned so the lane begins near the player and fades into fog instead of reading as a distant horizon
 - Near-edge placement retuned so the steerable strip and ship can come back to the player's feet without the curved masking wall clipping the left side
+- Added a metallic flying-saucer ship shape, basic trigger-fired projectiles, and a slightly wider/deeper play strip
 
 ## Why web first
 
@@ -37,9 +38,9 @@ Create a small experimental VR app that is easy to resume across different agent
 
 1. Test the new scrolling-flight motion on Quest 3.
 2. Tune the ship catch-up speed and tabletop playfield scale on-device.
-3. Decide whether steering should track continuously or only while holding a trigger.
-4. Add the first obstacle or target to fly around.
-5. Introduce basic firing once movement feels right.
+3. Tune projectile speed, size, and cadence on-device.
+4. Add the first obstacle or target to fly around or shoot.
+5. Decide whether steering should track continuously or only while holding a trigger.
 
 ## Open questions
 
@@ -69,3 +70,4 @@ Create a small experimental VR app that is easy to resume across different agent
 - Verified the live GitHub Pages deployment on Quest 3 and fixed the initial controller/view alignment issue.
 - Pulled the playfield back toward the player's feet and added fog plus soft masking to keep the space self-contained.
 - Extended the near steering range to the player's toes and removed the curved masking wall that was visibly cutting into the left side.
+- Replaced the ship with a saucer silhouette, widened the play area slightly, and added simple trigger-fired photon-style projectiles.

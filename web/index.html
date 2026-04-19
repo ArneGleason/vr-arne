@@ -17,6 +17,7 @@
       <h1>vr-arne</h1>
       <p>Point at the lane with your right controller.</p>
       <p>The ship will glide toward your aim while the ground scrolls forward.</p>
+      <p>Press the right trigger to fire.</p>
     </div>
 
     <a-scene
@@ -52,10 +53,10 @@
 
       <a-entity id="playfield" position="0 0 0" rotation="10 0 0">
         <a-plane
-          position="0 -0.2 -5.5"
+          position="0 -0.2 -6"
           rotation="-90 0 0"
-          width="9.5"
-          height="12"
+          width="10.5"
+          height="13"
           color="#4c956c"
           material="shader: flat"
         ></a-plane>
@@ -63,28 +64,29 @@
         <a-plane
           id="nav-surface"
           class="nav-surface"
-          position="0 -0.14 -5.5"
+          position="0 -0.14 -6"
           rotation="-90 0 0"
-          width="8.8"
-          height="12"
+          width="9.8"
+          height="13"
           color="#ffffff"
           material="transparent: true; opacity: 0.001; side: double"
         ></a-plane>
 
         <a-entity id="ground-markers"></a-entity>
+        <a-entity id="projectiles"></a-entity>
 
         <a-box
-          position="-4.8 0.02 -5.5"
+          position="-5.3 0.02 -6"
           width="0.16"
           height="0.18"
-          depth="12"
+          depth="13"
           color="#17324d"
         ></a-box>
         <a-box
-          position="4.8 0.02 -5.5"
+          position="5.3 0.02 -6"
           width="0.16"
           height="0.18"
-          depth="12"
+          depth="13"
           color="#17324d"
         ></a-box>
 
@@ -99,34 +101,42 @@
         </a-entity>
 
         <a-entity id="ship" position="0 0.45 -2.2">
-          <a-cone
-            radius-bottom="0.18"
-            radius-top="0.03"
-            height="0.7"
-            rotation="90 0 0"
-            color="#ff7a59"
+          <a-cylinder
+            position="0 0.03 0"
+            radius="0.42"
+            height="0.1"
+            color="#c3ceda"
+            material="metalness: 0.8; roughness: 0.25; color: #c3ceda"
+          ></a-cylinder>
+          <a-sphere
+            position="0 0.15 0.02"
+            radius="0.16"
+            color="#9fd3ff"
+            material="metalness: 0.35; roughness: 0.15; emissive: #2f5f85; emissiveIntensity: 0.35"
+          ></a-sphere>
+          <a-cylinder
+            position="0 -0.02 0"
+            radius="0.3"
+            height="0.08"
+            color="#8e9aa8"
+            material="metalness: 0.75; roughness: 0.3; color: #8e9aa8"
+          ></a-cylinder>
+          <a-sphere
+            position="-0.22 0.01 0.1"
+            radius="0.04"
+            color="#f4d35e"
             material="shader: flat"
-          ></a-cone>
-          <a-box
-            position="0 0.02 0.05"
-            width="0.7"
-            height="0.05"
-            depth="0.24"
-            color="#f7ede2"
+          ></a-sphere>
+          <a-sphere
+            position="0.22 0.01 0.1"
+            radius="0.04"
+            color="#f4d35e"
             material="shader: flat"
-          ></a-box>
-          <a-box
-            position="0 0.12 0.1"
-            width="0.18"
-            height="0.12"
-            depth="0.18"
-            color="#17324d"
-            material="shader: flat"
-          ></a-box>
+          ></a-sphere>
         </a-entity>
 
         <a-plane
-          position="0 1.15 -11.9"
+          position="0 1.1 -12.9"
           width="12"
           height="4.2"
           color="#d9f4ff"

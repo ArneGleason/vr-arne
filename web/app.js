@@ -5,11 +5,12 @@ AFRAME.registerComponent("flight-demo", {
     this.ship = document.querySelector("#ship");
     this.targetMarker = document.querySelector("#target-marker");
     this.markerRoot = document.querySelector("#ground-markers");
+    this.projectileRoot = document.querySelector("#projectiles");
 
     this.bounds = {
-      minX: -3.9,
-      maxX: 3.9,
-      minZ: -11.5,
+      minX: -4.4,
+      maxX: 4.4,
+      minZ: -12.5,
       maxZ: 0.8,
     };
 
@@ -20,19 +21,23 @@ AFRAME.registerComponent("flight-demo", {
     this.scrollRows = [];
     this.rowSpacing = 0.95;
     this.scrollSpeed = 3.8;
+    this.projectiles = [];
+    this.lastFireTime = 0;
+    this.fireCooldownMs = 180;
 
     this.buildGroundMarkers();
     this.bindDesktopControls();
+    this.bindFireControls();
     this.updateTargetMarker();
   },
 
   buildGroundMarkers() {
     const palette = ["#f7ede2", "#f4d35e", "#9ad1d4"];
-    const rowCount = 14;
+    const rowCount = 16;
 
     for (let index = 0; index < rowCount; index += 1) {
       const row = document.createElement("a-entity");
-      const lanePositions = [-2.7, 0, 2.7];
+      const lanePositions = [-3.1, 0, 3.1];
 
       row.object3D.position.set(0, -0.1, this.bounds.maxZ - index * this.rowSpacing);
 
@@ -71,6 +76,20 @@ AFRAME.registerComponent("flight-demo", {
 
       if (hitPoint) {
         this.setTarget(hitPoint.x, hitPoint.z);
+      }
+    });
+  },
+
+  bindFireControls() {
+    if (this.rightHand) {
+      this.rightHand.addEventListener("triggerdown", () => {
+        this.fireProjectile();
+      });
+    }
+
+    window.addEventListener("keydown", (event) => {
+      if (event.code === "Space") {
+        this.fireProjectile();
       }
     });
   },
@@ -127,6 +146,52 @@ AFRAME.registerComponent("flight-demo", {
     );
   },
 
+  fireProjectile() {
+    if (!this.ship || !this.projectileRoot) {
+      return;
+    }
+
+    const now = performance.now();
+
+    if (now - this.lastFireTime < this.fireCooldownMs) {
+      return;
+    }
+
+    this.lastFireTime = now;
+
+    const projectile = document.createElement("a-entity");
+    const bolt = document.createElement("a-sphere");
+    const glow = document.createElement("a-sphere");
+
+    projectile.object3D.position.copy(this.ship.object3D.position);
+    projectile.object3D.position.y += 0.08;
+    projectile.object3D.position.z -= 0.22;
+
+    bolt.setAttribute("radius", "0.08");
+    bolt.setAttribute("color", "#7fe7ff");
+    bolt.setAttribute(
+      "material",
+      "shader: flat; emissive: #7fe7ff; emissiveIntensity: 0.9"
+    );
+
+    glow.setAttribute("radius", "0.14");
+    glow.setAttribute("color", "#7fe7ff");
+    glow.setAttribute(
+      "material",
+      "shader: flat; transparent: true; opacity: 0.28"
+    );
+
+    projectile.appendChild(glow);
+    projectile.appendChild(bolt);
+    this.projectileRoot.appendChild(projectile);
+
+    this.projectiles.push({
+      el: projectile,
+      velocity: new THREE.Vector3(0, 0, -10.5),
+      lifetime: 1.6,
+    });
+  },
+
   updateGround(deltaSeconds) {
     const loopLength = this.rowSpacing * this.scrollRows.length;
 
@@ -139,12 +204,34 @@ AFRAME.registerComponent("flight-demo", {
     });
   },
 
+  updateProjectiles(deltaSeconds) {
+    this.projectiles = this.projectiles.filter((projectile) => {
+      projectile.lifetime -= deltaSeconds;
+      projectile.el.object3D.position.addScaledVector(
+        projectile.velocity,
+        deltaSeconds
+      );
+
+      const expired =
+        projectile.lifetime <= 0 ||
+        projectile.el.object3D.position.z < this.bounds.minZ - 3;
+
+      if (expired) {
+        projectile.el.remove();
+        return false;
+      }
+
+      return true;
+    });
+  },
+
   tick(time, delta) {
     const deltaSeconds = Math.min(delta / 1000, 0.05);
 
     this.updateTargetFromController();
     this.updateShip(deltaSeconds);
     this.updateGround(deltaSeconds);
+    this.updateProjectiles(deltaSeconds);
 
     if (this.targetMarker) {
       const pulse = 1 + Math.sin(time / 180) * 0.08;
