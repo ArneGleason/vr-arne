@@ -5,6 +5,9 @@ AFRAME.registerComponent("flight-demo", {
     this.ship = document.querySelector("#ship");
     this.shipShadow = document.querySelector("#ship-shadow");
     this.targetMarker = document.querySelector("#target-marker");
+    this.tutorialSteer = document.querySelector("#tutorial-steer");
+    this.tutorialFire = document.querySelector("#tutorial-fire");
+    this.tutorialFireTarget = document.querySelector("#tutorial-fire-target");
     this.markerRoot = document.querySelector("#ground-markers");
     this.projectileRoot = document.querySelector("#projectiles");
 
@@ -26,6 +29,7 @@ AFRAME.registerComponent("flight-demo", {
     this.lastFireTime = 0;
     this.fireCooldownMs = 180;
     this.wasTriggerPressed = false;
+    this.tutorialStage = "steer";
 
     this.buildGroundMarkers();
     this.bindDesktopControls();
@@ -168,6 +172,20 @@ AFRAME.registerComponent("flight-demo", {
       const shadowStretch = 1 + Math.min(Math.abs(lateralVelocity) * 8, 0.18);
       this.shipShadow.object3D.scale.set(shadowStretch, 1, 1.04);
     }
+
+    if (this.tutorialStage === "steer" && this.tutorialSteer) {
+      const steerTarget = this.tutorialSteer.object3D.position;
+      const distanceToSteerGoal = this.shipPosition.distanceTo(steerTarget);
+
+      if (distanceToSteerGoal < 0.55) {
+        this.tutorialStage = "fire";
+        this.tutorialSteer.setAttribute("visible", "false");
+
+        if (this.tutorialFire) {
+          this.tutorialFire.setAttribute("visible", "true");
+        }
+      }
+    }
   },
 
   pollFireControls() {
@@ -274,6 +292,22 @@ AFRAME.registerComponent("flight-demo", {
         );
         const glowScale = 0.9 + (1 - remaining) * 0.6;
         projectile.groundGlow.object3D.scale.set(glowScale, glowScale, glowScale);
+      }
+
+      if (
+        this.tutorialStage === "fire" &&
+        this.tutorialFireTarget &&
+        this.tutorialFire?.getAttribute("visible")
+      ) {
+        const projectilePosition = projectile.el.object3D.position;
+        const fireTargetPosition = this.tutorialFireTarget.object3D.getWorldPosition(
+          new THREE.Vector3()
+        );
+
+        if (projectilePosition.distanceTo(fireTargetPosition) < 0.46) {
+          this.tutorialStage = "done";
+          this.tutorialFire.setAttribute("visible", "false");
+        }
       }
 
       const expired =
