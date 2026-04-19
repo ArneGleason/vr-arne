@@ -33,6 +33,7 @@ Create a small experimental VR app that is easy to resume across different agent
 - The fire tutorial target now counts down from 10 hits before playing a brief blow-away outro, and the pastoral terrain visuals have been made much more obvious
 - The core interaction is shifting from unlimited firing to a hold-to-tractor and release-to-throw boulder loop, with tutorial stages for movement, pickup, and a static throw target
 - The boulders have been reduced toward projectile scale, tractor pickup is being made more visibly readable, and release now uses a visible launched shot for clearer feedback
+- Added explicit asset cache-busting and a visible build label to diagnose Quest Browser serving stale JS/CSS
 
 ## Why web first
 
@@ -85,3 +86,4 @@ Create a small experimental VR app that is easy to resume across different agent
 - Expanded the tutorial fire target into a 10-hit countdown objective with a quick outro and made the pastoral terrain much more visually pronounced.
 - Replaced the projectile-firing mechanic with a first tractor-and-throw boulder loop and retargeted the tutorial toward movement, pickup, and throwing.
 - Tightened the tractor-and-throw feedback by shrinking the pickup boulders and making release emit a clearly visible launched shot.
+- Added a versioned asset URL and visible build marker after repeated reports of Quest Browser showing stale builds.
