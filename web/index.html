@@ -22,6 +22,7 @@
     <a-scene
       flight-demo
       background="color: #d9f4ff"
+      fog="type: linear; color: #d9f4ff; near: 7; far: 18"
       renderer="colorManagement: true"
       xr-mode-ui="enabled: true"
       webxr="referenceSpaceType: local-floor; requiredFeatures: local-floor"
@@ -49,12 +50,12 @@
 
       <a-entity id="desktop-cursor" cursor="rayOrigin: mouse" raycaster="objects: .nav-surface"></a-entity>
 
-      <a-entity id="playfield">
+      <a-entity id="playfield" position="0 0 0" rotation="8 0 0">
         <a-plane
-          position="0 0.02 -14"
+          position="0 -0.2 -7.5"
           rotation="-90 0 0"
-          width="8.5"
-          height="18"
+          width="9.5"
+          height="13"
           color="#4c956c"
           material="shader: flat"
         ></a-plane>
@@ -62,10 +63,10 @@
         <a-plane
           id="nav-surface"
           class="nav-surface"
-          position="0 0.06 -14"
+          position="0 -0.14 -7.5"
           rotation="-90 0 0"
-          width="8"
-          height="18"
+          width="8.8"
+          height="13"
           color="#ffffff"
           material="transparent: true; opacity: 0.001; side: double"
         ></a-plane>
@@ -73,21 +74,21 @@
         <a-entity id="ground-markers"></a-entity>
 
         <a-box
-          position="-4.35 0.2 -14"
+          position="-4.8 0.02 -7.5"
           width="0.16"
-          height="0.4"
-          depth="18"
+          height="0.18"
+          depth="13"
           color="#17324d"
         ></a-box>
         <a-box
-          position="4.35 0.2 -14"
+          position="4.8 0.02 -7.5"
           width="0.16"
-          height="0.4"
-          depth="18"
+          height="0.18"
+          depth="13"
           color="#17324d"
         ></a-box>
 
-        <a-entity id="target-marker" position="0 0.08 -11">
+        <a-entity id="target-marker" position="0 -0.08 -5.8">
           <a-ring
             rotation="-90 0 0"
             radius-inner="0.18"
@@ -97,7 +98,7 @@
           ></a-ring>
         </a-entity>
 
-        <a-entity id="ship" position="0 0.65 -11">
+        <a-entity id="ship" position="0 0.45 -5.8">
           <a-cone
             radius-bottom="0.18"
             radius-top="0.03"
@@ -124,9 +125,29 @@
           ></a-box>
         </a-entity>
 
+        <a-plane
+          position="0 1.25 -14.4"
+          width="12"
+          height="4.2"
+          color="#d9f4ff"
+          material="shader: flat; opacity: 0.92"
+        ></a-plane>
+
+        <a-cylinder
+          position="0 1.3 -9.5"
+          radius="8"
+          height="4.5"
+          theta-start="190"
+          theta-length="160"
+          open-ended="true"
+          side="double"
+          color="#d9f4ff"
+          material="shader: flat; opacity: 0.7"
+        ></a-cylinder>
+
         <a-text
           value="Point to steer"
-          position="0 1.6 -9"
+          position="0 1.25 -4.4"
           align="center"
           color="#17324d"
           width="7"

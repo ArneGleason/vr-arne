@@ -7,18 +7,18 @@ AFRAME.registerComponent("flight-demo", {
     this.markerRoot = document.querySelector("#ground-markers");
 
     this.bounds = {
-      minX: -3.4,
-      maxX: 3.4,
-      minZ: -21.5,
-      maxZ: -6.5,
+      minX: -3.9,
+      maxX: 3.9,
+      minZ: -14,
+      maxZ: -1,
     };
 
-    this.shipTarget = new THREE.Vector3(0, 0.65, -11);
-    this.shipPosition = new THREE.Vector3(0, 0.65, -11);
+    this.shipTarget = new THREE.Vector3(0, 0.45, -5.8);
+    this.shipPosition = new THREE.Vector3(0, 0.45, -5.8);
     this.previousShipPosition = this.shipPosition.clone();
 
     this.scrollRows = [];
-    this.rowSpacing = 1.6;
+    this.rowSpacing = 1.1;
     this.scrollSpeed = 3.8;
 
     this.buildGroundMarkers();
@@ -32,30 +32,26 @@ AFRAME.registerComponent("flight-demo", {
 
     for (let index = 0; index < rowCount; index += 1) {
       const row = document.createElement("a-entity");
-      const lanePositions = [-2.4, 0, 2.4];
+      const lanePositions = [-2.7, 0, 2.7];
 
-      row.object3D.position.set(
-        0,
-        0.05,
-        this.bounds.maxZ - index * this.rowSpacing
-      );
+      row.object3D.position.set(0, -0.1, this.bounds.maxZ - index * this.rowSpacing);
 
       lanePositions.forEach((x, laneIndex) => {
         const marker = document.createElement("a-box");
         marker.setAttribute("position", `${x} 0 0`);
-        marker.setAttribute("width", laneIndex === 1 ? "0.65" : "0.45");
+        marker.setAttribute("width", laneIndex === 1 ? "0.75" : "0.52");
         marker.setAttribute("height", "0.05");
-        marker.setAttribute("depth", "0.7");
+        marker.setAttribute("depth", "0.6");
         marker.setAttribute("color", palette[(index + laneIndex) % palette.length]);
         marker.setAttribute("material", "shader: flat");
         row.appendChild(marker);
       });
 
       const centerStripe = document.createElement("a-box");
-      centerStripe.setAttribute("position", "0 0 -0.52");
+      centerStripe.setAttribute("position", "0 0 -0.45");
       centerStripe.setAttribute("width", "0.16");
       centerStripe.setAttribute("height", "0.03");
-      centerStripe.setAttribute("depth", "0.65");
+      centerStripe.setAttribute("depth", "0.55");
       centerStripe.setAttribute("color", "#17324d");
       centerStripe.setAttribute("material", "shader: flat");
       row.appendChild(centerStripe);
@@ -83,7 +79,7 @@ AFRAME.registerComponent("flight-demo", {
     const clampedX = THREE.MathUtils.clamp(x, this.bounds.minX, this.bounds.maxX);
     const clampedZ = THREE.MathUtils.clamp(z, this.bounds.minZ, this.bounds.maxZ);
 
-    this.shipTarget.set(clampedX, 0.65, clampedZ);
+    this.shipTarget.set(clampedX, 0.45, clampedZ);
     this.updateTargetMarker();
   },
 
@@ -94,7 +90,7 @@ AFRAME.registerComponent("flight-demo", {
 
     this.targetMarker.object3D.position.set(
       this.shipTarget.x,
-      0.08,
+      -0.08,
       this.shipTarget.z
     );
   },
