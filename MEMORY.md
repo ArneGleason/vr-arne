@@ -31,6 +31,7 @@ Create a small experimental VR app that is easy to resume across different agent
 - The helper text is evolving into a two-step in-world tutorial: steer to a marker first, then shoot a target to clear the second prompt
 - The abstract field is being replaced with a looping pastoral scene using a meandering stream and varied lightweight trees, and the fire tutorial hit test now compares world-space positions
 - The fire tutorial target now counts down from 10 hits before playing a brief blow-away outro, and the pastoral terrain visuals have been made much more obvious
+- The core interaction is shifting from unlimited firing to a hold-to-tractor and release-to-throw boulder loop, with tutorial stages for movement, pickup, and a static throw target
 
 ## Why web first
 
@@ -43,9 +44,9 @@ Create a small experimental VR app that is easy to resume across different agent
 
 1. Test the new scrolling-flight motion on Quest 3.
 2. Tune the ship catch-up speed and tabletop playfield scale on-device.
-3. Verify the fire tutorial target counts down properly and clears with the intended final-hit effect.
-4. Judge whether the pastoral stream-and-trees scenery now feels readable and performant on Quest 3.
-5. Decide whether the projectile ground-glow effect looks good enough to keep from a performance and style perspective.
+3. Verify that holding trigger tractors up one nearby boulder and releasing launches it forward cleanly.
+4. Verify the three-step tutorial flow feels clear: move, pick up, throw at static target.
+5. Add the moving target variant once the base tractor-and-throw loop feels good.
 
 ## Open questions
 
@@ -81,3 +82,4 @@ Create a small experimental VR app that is easy to resume across different agent
 - Started replacing static instructions with a staged tutorial that responds to steering and firing.
 - Replaced the abstract scrolling markers with procedural pastoral terrain segments and corrected the tutorial fire-hit detection to use matching coordinate space.
 - Expanded the tutorial fire target into a 10-hit countdown objective with a quick outro and made the pastoral terrain much more visually pronounced.
+- Replaced the projectile-firing mechanic with a first tractor-and-throw boulder loop and retargeted the tutorial toward movement, pickup, and throwing.

@@ -17,7 +17,7 @@
       <h1>vr-arne</h1>
       <p>Point at the lane with your right controller.</p>
       <p>The ship will glide toward your aim while the ground scrolls forward.</p>
-      <p>Press the right trigger to fire.</p>
+      <p>Hold the right trigger to tractor a boulder. Release to launch it.</p>
     </div>
 
     <a-scene
@@ -73,7 +73,7 @@
         ></a-plane>
 
         <a-entity id="ground-markers"></a-entity>
-        <a-entity id="projectiles"></a-entity>
+        <a-entity id="dynamic-objects"></a-entity>
 
         <a-box
           position="-5.3 0.02 -6"
@@ -117,36 +117,44 @@
           ></a-text>
         </a-entity>
 
-        <a-entity id="tutorial-fire" position="0 0.7 -7.8" visible="false">
+        <a-entity id="tutorial-tractor" position="0 0.55 -6.9" visible="false">
+          <a-ring
+            rotation="-90 0 0"
+            radius-inner="0.3"
+            radius-outer="0.46"
+            color="#9fd3ff"
+            material="shader: flat"
+          ></a-ring>
+          <a-text
+            value="Hold trigger near a boulder"
+            position="0 0.76 0"
+            align="center"
+            color="#17324d"
+            width="6.5"
+          ></a-text>
+        </a-entity>
+
+        <a-entity id="tutorial-throw" position="0 0.72 -8.2" visible="false">
           <a-sphere
-            id="tutorial-fire-target"
-            radius="0.32"
-            color="#7fe7ff"
-            material="shader: flat; emissive: #7fe7ff; emissiveIntensity: 0.85"
+            id="tutorial-throw-target"
+            radius="0.34"
+            color="#f4d35e"
+            material="shader: flat; emissive: #f4d35e; emissiveIntensity: 0.65"
           ></a-sphere>
           <a-ring
-            id="tutorial-fire-ring"
-            position="0 0 0"
-            radius-inner="0.36"
-            radius-outer="0.46"
+            id="tutorial-throw-ring"
+            radius-inner="0.38"
+            radius-outer="0.5"
             color="#f7ede2"
             material="shader: flat"
           ></a-ring>
           <a-text
-            id="tutorial-fire-count"
-            value="10"
-            position="0 -0.08 0.36"
+            id="tutorial-throw-text"
+            value="Release to launch at target"
+            position="0 0.86 0"
             align="center"
             color="#17324d"
-            width="2.4"
-          ></a-text>
-          <a-text
-            id="tutorial-fire-text"
-            value="Pull trigger to fire"
-            position="0 0.82 0"
-            align="center"
-            color="#17324d"
-            width="6.5"
+            width="7"
           ></a-text>
         </a-entity>
 
@@ -158,6 +166,15 @@
           color="#102030"
           material="shader: flat; transparent: true; opacity: 0.2"
         ></a-circle>
+
+        <a-cylinder
+          id="tractor-beam"
+          visible="false"
+          radius="0.07"
+          height="0.5"
+          color="#8ae7ff"
+          material="shader: flat; transparent: true; opacity: 0.28"
+        ></a-cylinder>
 
         <a-entity id="ship" position="0 0.45 -2.2">
           <a-cylinder

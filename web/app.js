@@ -2,17 +2,19 @@ AFRAME.registerComponent("flight-demo", {
   init() {
     this.rightHand = document.querySelector("#right-hand");
     this.navSurface = document.querySelector("#nav-surface");
+    this.playfield = document.querySelector("#playfield");
     this.ship = document.querySelector("#ship");
     this.shipShadow = document.querySelector("#ship-shadow");
+    this.tractorBeam = document.querySelector("#tractor-beam");
     this.targetMarker = document.querySelector("#target-marker");
     this.tutorialSteer = document.querySelector("#tutorial-steer");
-    this.tutorialFire = document.querySelector("#tutorial-fire");
-    this.tutorialFireTarget = document.querySelector("#tutorial-fire-target");
-    this.tutorialFireRing = document.querySelector("#tutorial-fire-ring");
-    this.tutorialFireCount = document.querySelector("#tutorial-fire-count");
-    this.tutorialFireText = document.querySelector("#tutorial-fire-text");
+    this.tutorialTractor = document.querySelector("#tutorial-tractor");
+    this.tutorialThrow = document.querySelector("#tutorial-throw");
+    this.tutorialThrowTarget = document.querySelector("#tutorial-throw-target");
+    this.tutorialThrowRing = document.querySelector("#tutorial-throw-ring");
+    this.tutorialThrowText = document.querySelector("#tutorial-throw-text");
     this.markerRoot = document.querySelector("#ground-markers");
-    this.projectileRoot = document.querySelector("#projectiles");
+    this.dynamicRoot = document.querySelector("#dynamic-objects");
 
     this.bounds = {
       minX: -4.4,
@@ -28,19 +30,25 @@ AFRAME.registerComponent("flight-demo", {
     this.scrollRows = [];
     this.rowSpacing = 0.95;
     this.scrollSpeed = 3.8;
-    this.projectiles = [];
-    this.lastFireTime = 0;
-    this.fireCooldownMs = 180;
+
+    this.boulders = [];
+    this.nextBoulderId = 1;
+    this.heldBoulder = null;
+    this.triggerHeld = false;
     this.wasTriggerPressed = false;
+
     this.tutorialStage = "steer";
-    this.tutorialFireHitsRemaining = 10;
-    this.tutorialFireOutroTime = 0;
-    this.tempProjectileWorld = new THREE.Vector3();
-    this.tempTutorialWorld = new THREE.Vector3();
+    this.tutorialThrowOutroTime = 0;
+
+    this.tempWorldA = new THREE.Vector3();
+    this.tempWorldB = new THREE.Vector3();
+    this.tempLocal = new THREE.Vector3();
+    this.tempBeamMid = new THREE.Vector3();
+    this.tempBeamDir = new THREE.Vector3();
 
     this.buildGroundMarkers();
     this.bindDesktopControls();
-    this.bindFireControls();
+    this.bindTriggerEvents();
     this.updateTargetMarker();
   },
 
@@ -52,7 +60,6 @@ AFRAME.registerComponent("flight-demo", {
       row.object3D.position.set(0, -0.1, this.bounds.maxZ - index * this.rowSpacing);
       row.dataset.segmentIndex = String(index);
       this.populateRow(row, index);
-
       this.markerRoot.appendChild(row);
       this.scrollRows.push(row);
     }
@@ -75,6 +82,17 @@ AFRAME.registerComponent("flight-demo", {
   },
 
   clearRow(row) {
+    this.boulders = this.boulders.filter((boulder) => {
+      const shouldRemove = boulder.row === row && boulder.state === "ground";
+
+      if (shouldRemove) {
+        boulder.el.remove();
+        return false;
+      }
+
+      return true;
+    });
+
     while (row.firstChild) {
       row.removeChild(row.firstChild);
     }
@@ -125,6 +143,55 @@ AFRAME.registerComponent("flight-demo", {
     return tree;
   },
 
+  createBoulder(row, segmentIndex, x, z, scaleSeed) {
+    const boulder = document.createElement("a-entity");
+    const rockMain = document.createElement("a-sphere");
+    const rockSide = document.createElement("a-sphere");
+    const shadow = document.createElement("a-circle");
+    const scale = 0.26 + this.randomFromSeed(scaleSeed) * 0.16;
+
+    boulder.object3D.position.set(x, 0.02, z);
+    boulder.object3D.rotation.y = THREE.MathUtils.degToRad(
+      this.randomFromSeed(scaleSeed + 8) * 360
+    );
+
+    rockMain.setAttribute("position", "0 0.16 0");
+    rockMain.setAttribute("radius", `${scale}`);
+    rockMain.setAttribute("scale", "1.18 0.84 1");
+    rockMain.setAttribute("color", "#8e877d");
+    rockMain.setAttribute("material", "shader: flat");
+
+    rockSide.setAttribute("position", `${scale * 0.32} 0.12 ${-scale * 0.14}`);
+    rockSide.setAttribute("radius", `${scale * 0.52}`);
+    rockSide.setAttribute("scale", "1 0.82 1.1");
+    rockSide.setAttribute("color", "#a29a90");
+    rockSide.setAttribute("material", "shader: flat");
+
+    shadow.setAttribute("position", "0 0 0");
+    shadow.setAttribute("rotation", "-90 0 0");
+    shadow.setAttribute("radius", `${scale * 0.88}`);
+    shadow.setAttribute("color", "#2b3620");
+    shadow.setAttribute("material", "shader: flat; transparent: true; opacity: 0.16");
+
+    boulder.appendChild(shadow);
+    boulder.appendChild(rockMain);
+    boulder.appendChild(rockSide);
+    row.appendChild(boulder);
+
+    this.boulders.push({
+      id: this.nextBoulderId++,
+      el: boulder,
+      row,
+      state: "ground",
+      velocity: new THREE.Vector3(),
+      spin: new THREE.Vector3(
+        (this.randomFromSeed(scaleSeed + 1) - 0.5) * 2,
+        (this.randomFromSeed(scaleSeed + 2) - 0.5) * 4,
+        (this.randomFromSeed(scaleSeed + 3) - 0.5) * 2
+      ),
+    });
+  },
+
   populateRow(row, segmentIndex) {
     this.clearRow(row);
 
@@ -144,20 +211,14 @@ AFRAME.registerComponent("flight-demo", {
     stream.setAttribute("color", "#5fb6d9");
     stream.setAttribute("material", "shader: flat");
 
-    streamBankLeft.setAttribute(
-      "position",
-      `${centerX - width * 0.58} 0.016 0`
-    );
+    streamBankLeft.setAttribute("position", `${centerX - width * 0.58} 0.016 0`);
     streamBankLeft.setAttribute("width", `${width * 0.3}`);
     streamBankLeft.setAttribute("height", "0.015");
     streamBankLeft.setAttribute("depth", `${segmentDepth * 1.05}`);
     streamBankLeft.setAttribute("color", "#8bb56b");
     streamBankLeft.setAttribute("material", "shader: flat");
 
-    streamBankRight.setAttribute(
-      "position",
-      `${centerX + width * 0.58} 0.016 0`
-    );
+    streamBankRight.setAttribute("position", `${centerX + width * 0.58} 0.016 0`);
     streamBankRight.setAttribute("width", `${width * 0.3}`);
     streamBankRight.setAttribute("height", "0.015");
     streamBankRight.setAttribute("depth", `${segmentDepth * 1.05}`);
@@ -172,16 +233,25 @@ AFRAME.registerComponent("flight-demo", {
     streamHighlight.setAttribute("height", "0.01");
     streamHighlight.setAttribute("depth", `${segmentDepth * 0.55}`);
     streamHighlight.setAttribute("color", "#c8f1ff");
-    streamHighlight.setAttribute("material", "shader: flat; transparent: true; opacity: 0.5");
+    streamHighlight.setAttribute(
+      "material",
+      "shader: flat; transparent: true; opacity: 0.5"
+    );
 
     meadowPatch.setAttribute(
       "position",
       `${centerX + Math.sin(segmentIndex * 0.7) * 1.25} 0.012 ${(this.randomFromSeed(segmentIndex + 90) - 0.5) * 0.35}`
     );
     meadowPatch.setAttribute("rotation", "-90 0 0");
-    meadowPatch.setAttribute("radius", `${0.18 + this.randomFromSeed(segmentIndex + 33) * 0.24}`);
+    meadowPatch.setAttribute(
+      "radius",
+      `${0.18 + this.randomFromSeed(segmentIndex + 33) * 0.24}`
+    );
     meadowPatch.setAttribute("color", "#77ad5a");
-    meadowPatch.setAttribute("material", "shader: flat; transparent: true; opacity: 0.55");
+    meadowPatch.setAttribute(
+      "material",
+      "shader: flat; transparent: true; opacity: 0.55"
+    );
 
     row.appendChild(stream);
     row.appendChild(streamBankLeft);
@@ -205,6 +275,22 @@ AFRAME.registerComponent("flight-demo", {
       const side = this.randomFromSeed(segmentIndex + 51) > 0.5 ? -1 : 1;
       row.appendChild(this.createTree(segmentIndex, side, 7));
     }
+
+    const boulderSideA = this.randomFromSeed(segmentIndex + 120) > 0.5 ? -1 : 1;
+    const boulderSideB = this.randomFromSeed(segmentIndex + 121) > 0.5 ? -1 : 1;
+    const streamEdge = width * 0.72;
+    const boulderX1 =
+      centerX + boulderSideA * (streamEdge + 0.85 + this.randomFromSeed(segmentIndex + 122) * 1.1);
+    const boulderZ1 = (this.randomFromSeed(segmentIndex + 123) - 0.5) * 0.54;
+    this.createBoulder(row, segmentIndex, boulderX1, boulderZ1, segmentIndex + 130);
+
+    if (this.randomFromSeed(segmentIndex + 124) > 0.38) {
+      const boulderX2 =
+        centerX +
+        boulderSideB * (streamEdge + 1.05 + this.randomFromSeed(segmentIndex + 125) * 1.25);
+      const boulderZ2 = (this.randomFromSeed(segmentIndex + 126) - 0.5) * 0.5;
+      this.createBoulder(row, segmentIndex, boulderX2, boulderZ2, segmentIndex + 140);
+    }
   },
 
   bindDesktopControls() {
@@ -221,27 +307,26 @@ AFRAME.registerComponent("flight-demo", {
     });
   },
 
-  bindFireControls() {
+  bindTriggerEvents() {
     if (this.rightHand) {
-      [
-        "triggerdown",
-        "mousedown",
-        "abuttondown",
-        "bbuttondown",
-        "xbuttondown",
-        "ybuttondown",
-        "gripdown",
-        "thumbstickdown",
-      ].forEach((eventName) => {
-        this.rightHand.addEventListener(eventName, () => {
-          this.fireProjectile();
-        });
+      ["triggerdown", "mousedown", "gripdown"].forEach((eventName) => {
+        this.rightHand.addEventListener(eventName, () => this.setTriggerHeld(true));
+      });
+
+      ["triggerup", "mouseup", "gripup"].forEach((eventName) => {
+        this.rightHand.addEventListener(eventName, () => this.setTriggerHeld(false));
       });
     }
 
     window.addEventListener("keydown", (event) => {
       if (event.code === "Space") {
-        this.fireProjectile();
+        this.setTriggerHeld(true);
+      }
+    });
+
+    window.addEventListener("keyup", (event) => {
+      if (event.code === "Space") {
+        this.setTriggerHeld(false);
       }
     });
   },
@@ -259,11 +344,7 @@ AFRAME.registerComponent("flight-demo", {
       return;
     }
 
-    this.targetMarker.object3D.position.set(
-      this.shipTarget.x,
-      -0.08,
-      this.shipTarget.z
-    );
+    this.targetMarker.object3D.position.set(this.shipTarget.x, -0.08, this.shipTarget.z);
   },
 
   updateTargetFromController() {
@@ -276,6 +357,100 @@ AFRAME.registerComponent("flight-demo", {
     if (navHit?.point) {
       this.setTarget(navHit.point.x, navHit.point.z);
     }
+  },
+
+  setTriggerHeld(isHeld) {
+    if (this.triggerHeld === isHeld) {
+      return;
+    }
+
+    this.triggerHeld = isHeld;
+
+    if (isHeld) {
+      this.onTriggerPress();
+    } else {
+      this.onTriggerRelease();
+    }
+  },
+
+  onTriggerPress() {
+    if (!this.heldBoulder) {
+      this.tryAcquireBoulder();
+    }
+  },
+
+  onTriggerRelease() {
+    if (this.heldBoulder) {
+      this.launchHeldBoulder();
+    }
+  },
+
+  pollTriggerControls() {
+    const trackedController =
+      this.rightHand?.components?.["tracked-controls"]?.controller ||
+      this.rightHand?.components?.["tracked-controls-webxr"]?.controller;
+    const gamepad = trackedController?.gamepad;
+    const buttons = gamepad?.buttons;
+    const triggerPressed = Boolean(buttons?.[0]?.pressed || buttons?.[1]?.pressed);
+
+    if (triggerPressed !== this.wasTriggerPressed) {
+      this.setTriggerHeld(triggerPressed);
+    }
+
+    this.wasTriggerPressed = triggerPressed;
+  },
+
+  tryAcquireBoulder() {
+    if (!this.ship || !this.playfield) {
+      return;
+    }
+
+    const shipWorld = this.ship.object3D.getWorldPosition(this.tempWorldA);
+    let bestBoulder = null;
+    let bestDistance = 1.2;
+
+    this.boulders.forEach((boulder) => {
+      if (boulder.state !== "ground") {
+        return;
+      }
+
+      const worldPosition = boulder.el.object3D.getWorldPosition(this.tempWorldB);
+      const distance = shipWorld.distanceTo(worldPosition);
+
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestBoulder = boulder;
+      }
+    });
+
+    if (!bestBoulder) {
+      return;
+    }
+
+    const worldPosition = bestBoulder.el.object3D.getWorldPosition(this.tempWorldB);
+    this.dynamicRoot.object3D.worldToLocal(this.tempLocal.copy(worldPosition));
+    bestBoulder.el.object3D.position.copy(this.tempLocal);
+    this.dynamicRoot.appendChild(bestBoulder.el);
+    bestBoulder.state = "held";
+    bestBoulder.velocity.set(0, 0, 0);
+    this.heldBoulder = bestBoulder;
+
+    if (this.tutorialStage === "tractor") {
+      this.tutorialStage = "throw";
+      this.tutorialTractor?.setAttribute("visible", "false");
+      this.tutorialThrow?.setAttribute("visible", "true");
+    }
+  },
+
+  launchHeldBoulder() {
+    if (!this.heldBoulder) {
+      return;
+    }
+
+    const lateralVelocity = this.shipPosition.x - this.previousShipPosition.x;
+    this.heldBoulder.state = "thrown";
+    this.heldBoulder.velocity.set(lateralVelocity * 22, 2.6, -10.8);
+    this.heldBoulder = null;
   },
 
   updateShip(deltaSeconds) {
@@ -313,119 +488,11 @@ AFRAME.registerComponent("flight-demo", {
       const distanceToSteerGoal = this.shipPosition.distanceTo(steerTarget);
 
       if (distanceToSteerGoal < 0.55) {
-        this.tutorialStage = "fire";
+        this.tutorialStage = "tractor";
         this.tutorialSteer.setAttribute("visible", "false");
-
-        if (this.tutorialFire) {
-          this.tutorialFire.setAttribute("visible", "true");
-        }
+        this.tutorialTractor?.setAttribute("visible", "true");
       }
     }
-  },
-
-  registerTutorialFireHit() {
-    if (this.tutorialStage !== "fire" || !this.tutorialFire) {
-      return;
-    }
-
-    this.tutorialFireHitsRemaining -= 1;
-
-    if (this.tutorialFireCount) {
-      this.tutorialFireCount.setAttribute(
-        "value",
-        `${Math.max(this.tutorialFireHitsRemaining, 0)}`
-      );
-    }
-
-    if (this.tutorialFireTarget) {
-      const flashScale =
-        1 + (10 - Math.max(this.tutorialFireHitsRemaining, 0)) * 0.015;
-      this.tutorialFireTarget.object3D.scale.set(
-        flashScale,
-        flashScale,
-        flashScale
-      );
-    }
-
-    if (this.tutorialFireHitsRemaining <= 0) {
-      this.tutorialStage = "done";
-      this.tutorialFireOutroTime = 0.32;
-    }
-  },
-
-  pollFireControls() {
-    const trackedController =
-      this.rightHand?.components?.["tracked-controls"]?.controller ||
-      this.rightHand?.components?.["tracked-controls-webxr"]?.controller;
-    const gamepad = trackedController?.gamepad;
-    const buttons = gamepad?.buttons;
-    const triggerPressed = Boolean(
-      buttons?.[0]?.pressed || buttons?.[1]?.pressed || buttons?.[4]?.pressed
-    );
-
-    if (triggerPressed && !this.wasTriggerPressed) {
-      this.fireProjectile();
-    }
-
-    this.wasTriggerPressed = triggerPressed;
-  },
-
-  fireProjectile() {
-    if (!this.ship || !this.projectileRoot) {
-      return;
-    }
-
-    const now = performance.now();
-
-    if (now - this.lastFireTime < this.fireCooldownMs) {
-      return;
-    }
-
-    this.lastFireTime = now;
-
-    const projectile = document.createElement("a-entity");
-    const bolt = document.createElement("a-sphere");
-    const glow = document.createElement("a-sphere");
-    const groundGlow = document.createElement("a-circle");
-
-    projectile.object3D.position.copy(this.ship.object3D.position);
-    projectile.object3D.position.y += 0.08;
-    projectile.object3D.position.z -= 0.22;
-
-    bolt.setAttribute("radius", "0.08");
-    bolt.setAttribute("color", "#7fe7ff");
-    bolt.setAttribute(
-      "material",
-      "shader: flat; emissive: #7fe7ff; emissiveIntensity: 0.9"
-    );
-
-    glow.setAttribute("radius", "0.14");
-    glow.setAttribute("color", "#7fe7ff");
-    glow.setAttribute(
-      "material",
-      "shader: flat; transparent: true; opacity: 0.28"
-    );
-
-    groundGlow.setAttribute("radius", "0.18");
-    groundGlow.setAttribute("rotation", "-90 0 0");
-    groundGlow.setAttribute("position", "0 -0.5 0");
-    groundGlow.setAttribute("color", "#a7f3ff");
-    groundGlow.setAttribute(
-      "material",
-      "shader: flat; transparent: true; opacity: 0.22"
-    );
-
-    projectile.appendChild(groundGlow);
-    projectile.appendChild(glow);
-    projectile.appendChild(bolt);
-    this.projectileRoot.appendChild(projectile);
-
-    this.projectiles.push({
-      el: projectile,
-      groundGlow,
-      velocity: new THREE.Vector3(0, 0, -10.5),
-      lifetime: 1.6,
-    });
   },
 
   updateGround(deltaSeconds) {
@@ -444,49 +511,94 @@ AFRAME.registerComponent("flight-demo", {
     });
   },
 
-  updateProjectiles(deltaSeconds) {
-    this.projectiles = this.projectiles.filter((projectile) => {
-      projectile.lifetime -= deltaSeconds;
-      projectile.el.object3D.position.addScaledVector(
-        projectile.velocity,
-        deltaSeconds
-      );
-
-      if (projectile.groundGlow) {
-        const remaining = Math.max(projectile.lifetime / 1.6, 0);
-        projectile.groundGlow.object3D.position.y = -0.5;
-        projectile.groundGlow.setAttribute(
-          "material",
-          `shader: flat; transparent: true; opacity: ${0.1 + remaining * 0.18}`
-        );
-        const glowScale = 0.9 + (1 - remaining) * 0.6;
-        projectile.groundGlow.object3D.scale.set(glowScale, glowScale, glowScale);
+  updateHeldBoulder(deltaSeconds) {
+    if (!this.heldBoulder) {
+      if (this.tractorBeam) {
+        this.tractorBeam.setAttribute("visible", "false");
       }
 
+      return;
+    }
+
+    const holdTarget = new THREE.Vector3(
+      this.shipPosition.x,
+      this.shipPosition.y - 0.27,
+      this.shipPosition.z + 0.04
+    );
+    const currentPosition = this.heldBoulder.el.object3D.position;
+    const catchUp = 1 - Math.exp(-deltaSeconds * 8);
+    currentPosition.lerp(holdTarget, catchUp);
+    this.heldBoulder.el.object3D.rotation.x += deltaSeconds * this.heldBoulder.spin.x;
+    this.heldBoulder.el.object3D.rotation.y += deltaSeconds * this.heldBoulder.spin.y;
+    this.heldBoulder.el.object3D.rotation.z += deltaSeconds * this.heldBoulder.spin.z;
+
+    if (this.tractorBeam) {
+      const beamStart = new THREE.Vector3(
+        this.shipPosition.x,
+        this.shipPosition.y - 0.04,
+        this.shipPosition.z + 0.01
+      );
+      const beamEnd = currentPosition;
+
+      this.tempBeamMid.copy(beamStart).lerp(beamEnd, 0.5);
+      this.tempBeamDir.copy(beamEnd).sub(beamStart);
+
+      this.tractorBeam.setAttribute("visible", "true");
+      this.tractorBeam.object3D.position.copy(this.tempBeamMid);
+      this.tractorBeam.object3D.scale.set(1, this.tempBeamDir.length() / 0.5, 1);
+      this.tractorBeam.object3D.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        this.tempBeamDir.clone().normalize()
+      );
+    }
+  },
+
+  registerThrowHit() {
+    if (this.tutorialStage !== "throw" || !this.tutorialThrow) {
+      return;
+    }
+
+    this.tutorialStage = "done";
+    this.tutorialThrowOutroTime = 0.32;
+  },
+
+  updateThrownBoulders(deltaSeconds) {
+    const gravity = 5.4;
+
+    this.boulders = this.boulders.filter((boulder) => {
+      if (boulder.state !== "thrown") {
+        return true;
+      }
+
+      boulder.velocity.y -= gravity * deltaSeconds;
+      boulder.el.object3D.position.addScaledVector(boulder.velocity, deltaSeconds);
+      boulder.el.object3D.rotation.x += deltaSeconds * boulder.spin.x * 2;
+      boulder.el.object3D.rotation.y += deltaSeconds * boulder.spin.y * 2;
+      boulder.el.object3D.rotation.z += deltaSeconds * boulder.spin.z * 2;
+
       if (
-        this.tutorialStage === "fire" &&
-        this.tutorialFireTarget &&
-        this.tutorialFire?.getAttribute("visible")
+        this.tutorialStage === "throw" &&
+        this.tutorialThrowTarget &&
+        this.tutorialThrow?.getAttribute("visible")
       ) {
-        const projectilePosition = projectile.el.object3D.getWorldPosition(
-          this.tempProjectileWorld
-        );
-        const fireTargetPosition = this.tutorialFireTarget.object3D.getWorldPosition(
-          this.tempTutorialWorld
+        const boulderPosition = boulder.el.object3D.getWorldPosition(this.tempWorldA);
+        const targetPosition = this.tutorialThrowTarget.object3D.getWorldPosition(
+          this.tempWorldB
         );
 
-        if (projectilePosition.distanceTo(fireTargetPosition) < 0.46) {
-          projectile.lifetime = 0;
-          this.registerTutorialFireHit();
+        if (boulderPosition.distanceTo(targetPosition) < 0.55) {
+          boulder.el.remove();
+          this.registerThrowHit();
+          return false;
         }
       }
 
       const expired =
-        projectile.lifetime <= 0 ||
-        projectile.el.object3D.position.z < this.bounds.minZ - 3;
+        boulder.el.object3D.position.y < -0.4 ||
+        boulder.el.object3D.position.z < this.bounds.minZ - 3;
 
       if (expired) {
-        projectile.el.remove();
+        boulder.el.remove();
         return false;
       }
 
@@ -494,53 +606,55 @@ AFRAME.registerComponent("flight-demo", {
     });
   },
 
-  tick(time, delta) {
+  updateTutorialOutro(deltaSeconds) {
+    if (this.tutorialThrowOutroTime <= 0 || !this.tutorialThrow) {
+      return;
+    }
+
+    this.tutorialThrowOutroTime = Math.max(this.tutorialThrowOutroTime - deltaSeconds, 0);
+    const progress = 1 - this.tutorialThrowOutroTime / 0.32;
+    const scale = 1 + progress * 1.2;
+    const opacity = Math.max(1 - progress, 0);
+
+    this.tutorialThrow.object3D.scale.set(scale, scale, scale);
+
+    if (this.tutorialThrowTarget) {
+      this.tutorialThrowTarget.setAttribute(
+        "material",
+        `shader: flat; emissive: #f4d35e; emissiveIntensity: ${0.65 + progress * 0.35}; transparent: true; opacity: ${opacity}`
+      );
+    }
+
+    if (this.tutorialThrowRing) {
+      this.tutorialThrowRing.setAttribute(
+        "material",
+        `shader: flat; transparent: true; opacity: ${opacity}`
+      );
+    }
+
+    if (this.tutorialThrowText) {
+      this.tutorialThrowText.setAttribute("opacity", `${opacity}`);
+    }
+
+    if (this.tutorialThrowOutroTime === 0) {
+      this.tutorialThrow.setAttribute("visible", "false");
+    }
+  },
+
+  tick(_time, delta) {
     const deltaSeconds = Math.min(delta / 1000, 0.05);
 
     this.updateTargetFromController();
-    this.pollFireControls();
+    this.pollTriggerControls();
     this.updateShip(deltaSeconds);
     this.updateGround(deltaSeconds);
-    this.updateProjectiles(deltaSeconds);
+    this.updateHeldBoulder(deltaSeconds);
+    this.updateThrownBoulders(deltaSeconds);
+    this.updateTutorialOutro(deltaSeconds);
 
     if (this.targetMarker) {
-      const pulse = 1 + Math.sin(time / 180) * 0.08;
+      const pulse = 1 + Math.sin(performance.now() / 180) * 0.08;
       this.targetMarker.object3D.scale.set(pulse, pulse, pulse);
-    }
-
-    if (this.tutorialFireOutroTime > 0 && this.tutorialFire) {
-      this.tutorialFireOutroTime = Math.max(this.tutorialFireOutroTime - deltaSeconds, 0);
-      const progress = 1 - this.tutorialFireOutroTime / 0.32;
-      const scale = 1 + progress * 1.2;
-      this.tutorialFire.object3D.scale.set(scale, scale, scale);
-
-      const opacity = Math.max(1 - progress, 0);
-
-      if (this.tutorialFireTarget) {
-        this.tutorialFireTarget.setAttribute(
-          "material",
-          `shader: flat; emissive: #7fe7ff; emissiveIntensity: ${0.85 + progress * 0.4}; transparent: true; opacity: ${opacity}`
-        );
-      }
-
-      if (this.tutorialFireRing) {
-        this.tutorialFireRing.setAttribute(
-          "material",
-          `shader: flat; transparent: true; opacity: ${opacity}`
-        );
-      }
-
-      if (this.tutorialFireCount) {
-        this.tutorialFireCount.setAttribute("opacity", `${opacity}`);
-      }
-
-      if (this.tutorialFireText) {
-        this.tutorialFireText.setAttribute("opacity", `${opacity}`);
-      }
-
-      if (this.tutorialFireOutroTime === 0) {
-        this.tutorialFire.setAttribute("visible", "false");
-      }
     }
   },
 });
