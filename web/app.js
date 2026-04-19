@@ -33,6 +33,8 @@ AFRAME.registerComponent("flight-demo", {
 
     this.boulders = [];
     this.launchedShots = [];
+    this.enemies = [];
+    this.nextEnemyWaveId = 1;
     this.nextBoulderId = 1;
     this.heldBoulder = null;
     this.triggerHeld = false;
@@ -40,12 +42,15 @@ AFRAME.registerComponent("flight-demo", {
 
     this.tutorialStage = "steer";
     this.tutorialThrowOutroTime = 0;
+    this.enemyWaveActive = false;
+    this.enemySpawnCooldown = 0;
 
     this.tempWorldA = new THREE.Vector3();
     this.tempWorldB = new THREE.Vector3();
     this.tempLocal = new THREE.Vector3();
     this.tempBeamMid = new THREE.Vector3();
     this.tempBeamDir = new THREE.Vector3();
+    this.tempEnemySpawn = new THREE.Vector3();
 
     this.buildGroundMarkers();
     this.bindDesktopControls();
@@ -192,6 +197,90 @@ AFRAME.registerComponent("flight-demo", {
         (this.randomFromSeed(scaleSeed + 3) - 0.5) * 2
       ),
     });
+  },
+
+  createEnemy(position, laneIndex, waveId) {
+    const enemy = document.createElement("a-entity");
+    const body = document.createElement("a-box");
+    const wingLeft = document.createElement("a-box");
+    const wingRight = document.createElement("a-box");
+    const eyeLeft = document.createElement("a-box");
+    const eyeRight = document.createElement("a-box");
+    const lower = document.createElement("a-box");
+
+    enemy.object3D.position.copy(position);
+
+    body.setAttribute("width", "0.48");
+    body.setAttribute("height", "0.3");
+    body.setAttribute("depth", "0.16");
+    body.setAttribute("color", "#53354a");
+    body.setAttribute("material", "shader: flat");
+
+    wingLeft.setAttribute("position", "-0.28 0 0");
+    wingLeft.setAttribute("width", "0.12");
+    wingLeft.setAttribute("height", "0.22");
+    wingLeft.setAttribute("depth", "0.14");
+    wingLeft.setAttribute("color", "#7a4e6a");
+    wingLeft.setAttribute("material", "shader: flat");
+
+    wingRight.setAttribute("position", "0.28 0 0");
+    wingRight.setAttribute("width", "0.12");
+    wingRight.setAttribute("height", "0.22");
+    wingRight.setAttribute("depth", "0.14");
+    wingRight.setAttribute("color", "#7a4e6a");
+    wingRight.setAttribute("material", "shader: flat");
+
+    lower.setAttribute("position", "0 -0.18 0");
+    lower.setAttribute("width", "0.24");
+    lower.setAttribute("height", "0.12");
+    lower.setAttribute("depth", "0.12");
+    lower.setAttribute("color", "#2b2e4a");
+    lower.setAttribute("material", "shader: flat");
+
+    eyeLeft.setAttribute("position", "-0.11 0.03 0.09");
+    eyeLeft.setAttribute("width", "0.08");
+    eyeLeft.setAttribute("height", "0.08");
+    eyeLeft.setAttribute("depth", "0.03");
+    eyeLeft.setAttribute("color", "#f08a5d");
+    eyeLeft.setAttribute("material", "shader: flat");
+
+    eyeRight.setAttribute("position", "0.11 0.03 0.09");
+    eyeRight.setAttribute("width", "0.08");
+    eyeRight.setAttribute("height", "0.08");
+    eyeRight.setAttribute("depth", "0.03");
+    eyeRight.setAttribute("color", "#f08a5d");
+    eyeRight.setAttribute("material", "shader: flat");
+
+    enemy.appendChild(body);
+    enemy.appendChild(wingLeft);
+    enemy.appendChild(wingRight);
+    enemy.appendChild(lower);
+    enemy.appendChild(eyeLeft);
+    enemy.appendChild(eyeRight);
+    this.dynamicRoot.appendChild(enemy);
+
+    this.enemies.push({
+      el: enemy,
+      laneIndex,
+      waveId,
+      baseX: position.x,
+      spawnZ: position.z,
+      age: 0,
+      state: "entering",
+      hitTime: 0,
+    });
+  },
+
+  spawnEnemyWave() {
+    const waveId = this.nextEnemyWaveId++;
+    const lanes = [-2.4, 0, 2.4];
+
+    lanes.forEach((x, index) => {
+      this.tempEnemySpawn.set(x, 0.78, -11.8 - index * 0.35);
+      this.createEnemy(this.tempEnemySpawn.clone(), index, waveId);
+    });
+
+    this.enemyWaveActive = true;
   },
 
   populateRow(row, segmentIndex) {
@@ -619,6 +708,16 @@ AFRAME.registerComponent("flight-demo", {
 
     this.tutorialStage = "done";
     this.tutorialThrowOutroTime = 0.32;
+    this.enemySpawnCooldown = 0.75;
+  },
+
+  hitEnemy(enemy) {
+    if (enemy.state === "hit") {
+      return;
+    }
+
+    enemy.state = "hit";
+    enemy.hitTime = 0.28;
   },
 
   updateThrownBoulders(deltaSeconds) {
@@ -696,6 +795,24 @@ AFRAME.registerComponent("flight-demo", {
         }
       }
 
+      let hitEnemy = false;
+      this.enemies.forEach((enemy) => {
+        if (hitEnemy || enemy.state === "hit") {
+          return;
+        }
+
+        const enemyPosition = enemy.el.object3D.getWorldPosition(this.tempWorldB);
+        if (shotPosition.distanceTo(enemyPosition) < 0.45) {
+          this.hitEnemy(enemy);
+          hitEnemy = true;
+        }
+      });
+
+      if (hitEnemy) {
+        shot.el.remove();
+        return false;
+      }
+
       const expired =
         shot.lifetime <= 0 ||
         shot.el.object3D.position.y < -0.4 ||
@@ -708,6 +825,48 @@ AFRAME.registerComponent("flight-demo", {
 
       return true;
     });
+  },
+
+  updateEnemies(deltaSeconds) {
+    this.enemies = this.enemies.filter((enemy) => {
+      enemy.age += deltaSeconds;
+
+      if (enemy.state === "hit") {
+        enemy.hitTime = Math.max(enemy.hitTime - deltaSeconds, 0);
+        const progress = 1 - enemy.hitTime / 0.28;
+        const scale = 1 + progress * 1.1;
+        enemy.el.object3D.scale.set(scale, scale, scale);
+        enemy.el.object3D.rotation.z += deltaSeconds * 8;
+
+        if (enemy.hitTime === 0) {
+          enemy.el.remove();
+          return false;
+        }
+
+        return true;
+      }
+
+      const travel = Math.min(enemy.age * 1.7, 1);
+      const z = THREE.MathUtils.lerp(enemy.spawnZ, -7.2, travel);
+      const xOffset = Math.sin(enemy.age * 1.8 + enemy.laneIndex) * 0.55;
+      enemy.el.object3D.position.set(enemy.baseX + xOffset, 0.78, z);
+      enemy.el.object3D.rotation.y = Math.sin(enemy.age * 2.4 + enemy.laneIndex) * 0.22;
+
+      return true;
+    });
+
+    if (this.tutorialStage === "done" && !this.enemyWaveActive && this.enemySpawnCooldown <= 0) {
+      this.spawnEnemyWave();
+    }
+
+    if (this.tutorialStage === "done" && this.enemyWaveActive && this.enemies.length === 0) {
+      this.enemyWaveActive = false;
+      this.enemySpawnCooldown = 1.1;
+    }
+
+    if (this.enemySpawnCooldown > 0) {
+      this.enemySpawnCooldown = Math.max(this.enemySpawnCooldown - deltaSeconds, 0);
+    }
   },
 
   updateTutorialOutro(deltaSeconds) {
@@ -755,6 +914,7 @@ AFRAME.registerComponent("flight-demo", {
     this.updateHeldBoulder(deltaSeconds);
     this.updateThrownBoulders(deltaSeconds);
     this.updateLaunchedShots(deltaSeconds);
+    this.updateEnemies(deltaSeconds);
     this.updateTutorialOutro(deltaSeconds);
 
     if (this.targetMarker) {

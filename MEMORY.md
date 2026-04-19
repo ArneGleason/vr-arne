@@ -34,6 +34,7 @@ Create a small experimental VR app that is easy to resume across different agent
 - The core interaction is shifting from unlimited firing to a hold-to-tractor and release-to-throw boulder loop, with tutorial stages for movement, pickup, and a static throw target
 - The boulders have been reduced toward projectile scale, tractor pickup is being made more visibly readable, and release now uses a visible launched shot for clearer feedback
 - Added explicit asset cache-busting and a visible build label to diagnose Quest Browser serving stale JS/CSS
+- After the throw tutorial, the next loop is shifting to endless three-enemy waves so the boulder-launch mechanic becomes the core game loop
 
 ## Why web first
 
@@ -48,7 +49,7 @@ Create a small experimental VR app that is easy to resume across different agent
 2. Tune the ship catch-up speed and tabletop playfield scale on-device.
 3. Verify that holding trigger tractors up one nearby small boulder with readable suction motion and releasing launches a visible shot cleanly.
 4. Verify the three-step tutorial flow feels clear: move, pick up, throw at static target.
-5. Add the moving target variant once the base tractor-and-throw loop feels good.
+5. Tune the endless three-enemy wave loop once the tractor-and-throw feedback feels solid.
 
 ## Open questions
 
@@ -87,3 +88,4 @@ Create a small experimental VR app that is easy to resume across different agent
 - Replaced the projectile-firing mechanic with a first tractor-and-throw boulder loop and retargeted the tutorial toward movement, pickup, and throwing.
 - Tightened the tractor-and-throw feedback by shrinking the pickup boulders and making release emit a clearly visible launched shot.
 - Added a versioned asset URL and visible build marker after repeated reports of Quest Browser showing stale builds.
+- Began replacing the throw tutorial endpoint with a repeating wave of three simple enemies to create a basic endless scoring/combat loop.
