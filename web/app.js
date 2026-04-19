@@ -1,5 +1,6 @@
 const debugPanel = document.querySelector("#debug-panel");
 const debugLog = document.querySelector("#debug-log");
+const statusCopy = document.querySelector("#status-copy");
 
 function reportDebug(message) {
   if (!debugPanel || !debugLog) {
@@ -43,6 +44,11 @@ AFRAME.registerComponent("flight-demo", {
     this.tutorialThrowText = document.querySelector("#tutorial-throw-text");
     this.markerRoot = document.querySelector("#ground-markers");
     this.dynamicRoot = document.querySelector("#dynamic-objects");
+    this.menuPanel = document.querySelector("#menu-panel");
+    this.endPanel = document.querySelector("#end-panel");
+    this.menuStartButton = document.querySelector("#menu-start-button");
+    this.endRestartButton = document.querySelector("#end-restart-button");
+    this.endSummary = document.querySelector("#end-summary");
 
     this.bounds = {
       minX: -4.4,
@@ -72,6 +78,10 @@ AFRAME.registerComponent("flight-demo", {
     this.tutorialThrowOutroTime = 0;
     this.enemyWaveActive = false;
     this.enemySpawnCooldown = 0;
+    this.gameState = "menu";
+    this.completedWaves = 0;
+    this.maxWaves = 2;
+    this.endCountdown = 0;
 
     this.tempWorldA = new THREE.Vector3();
     this.tempWorldB = new THREE.Vector3();
@@ -83,7 +93,109 @@ AFRAME.registerComponent("flight-demo", {
     this.buildGroundMarkers();
     this.bindDesktopControls();
     this.bindTriggerEvents();
+    this.bindMenuButtons();
+    this.showMenu();
     this.updateTargetMarker();
+  },
+
+  bindMenuButtons() {
+    this.menuStartButton?.addEventListener("click", () => this.startGame());
+    this.endRestartButton?.addEventListener("click", () => this.showMenu());
+  },
+
+  setStatus(message) {
+    if (statusCopy) {
+      statusCopy.textContent = message;
+    }
+  },
+
+  clearEnemies() {
+    this.enemies.forEach((enemy) => enemy.el.remove());
+    this.enemies = [];
+    this.enemyWaveActive = false;
+  },
+
+  clearLaunchedShots() {
+    this.launchedShots.forEach((shot) => shot.el.remove());
+    this.launchedShots = [];
+  },
+
+  clearHeldBoulder() {
+    if (this.heldBoulder) {
+      this.heldBoulder.el.remove();
+      this.boulders = this.boulders.filter((boulder) => boulder !== this.heldBoulder);
+      this.heldBoulder = null;
+    }
+
+    if (this.tractorBeam) {
+      this.tractorBeam.setAttribute("visible", "false");
+    }
+  },
+
+  resetRunState() {
+    this.clearEnemies();
+    this.clearLaunchedShots();
+    this.clearHeldBoulder();
+    this.triggerHeld = false;
+    this.wasTriggerPressed = false;
+    this.completedWaves = 0;
+    this.enemySpawnCooldown = 0;
+    this.endCountdown = 0;
+    this.tutorialStage = "steer";
+    this.tutorialThrowOutroTime = 0;
+
+    this.shipPosition.set(0, 0.45, -2.2);
+    this.previousShipPosition.copy(this.shipPosition);
+    this.shipTarget.copy(this.shipPosition);
+    this.ship?.object3D.position.copy(this.shipPosition);
+
+    this.tutorialSteer?.setAttribute("visible", "true");
+    this.tutorialTractor?.setAttribute("visible", "false");
+    this.tutorialThrow?.setAttribute("visible", "false");
+    this.tutorialThrow?.object3D.scale.set(1, 1, 1);
+    this.tutorialThrowTarget?.setAttribute(
+      "material",
+      "shader: flat; emissive: #f4d35e; emissiveIntensity: 0.65"
+    );
+    this.tutorialThrowRing?.setAttribute("material", "shader: flat");
+    this.tutorialThrowText?.setAttribute("opacity", "1");
+    this.targetMarker?.setAttribute("visible", "true");
+  },
+
+  showMenu() {
+    this.resetRunState();
+    this.gameState = "menu";
+    this.menuPanel?.setAttribute("visible", "true");
+    this.endPanel?.setAttribute("visible", "false");
+    this.setStatus("Point at Start to begin.");
+    this.targetMarker?.setAttribute("visible", "false");
+    this.tutorialSteer?.setAttribute("visible", "false");
+  },
+
+  startGame() {
+    this.resetRunState();
+    this.gameState = "playing";
+    this.menuPanel?.setAttribute("visible", "false");
+    this.endPanel?.setAttribute("visible", "false");
+    this.setStatus("Point to steer. Hold trigger to tractor. Release to launch.");
+  },
+
+  finishGame() {
+    this.gameState = "ending";
+    this.clearEnemies();
+    this.clearLaunchedShots();
+    this.clearHeldBoulder();
+    this.targetMarker?.setAttribute("visible", "false");
+    this.tutorialSteer?.setAttribute("visible", "false");
+    this.tutorialTractor?.setAttribute("visible", "false");
+    this.tutorialThrow?.setAttribute("visible", "false");
+    this.endSummary?.setAttribute(
+      "value",
+      `${this.completedWaves} waves cleared. More coming soon.`
+    );
+    this.endPanel?.setAttribute("visible", "true");
+    this.menuPanel?.setAttribute("visible", "false");
+    this.setStatus("Prototype slice complete. Point at Back To Start.");
   },
 
   buildGroundMarkers() {
@@ -418,6 +530,10 @@ AFRAME.registerComponent("flight-demo", {
     }
 
     this.navSurface.addEventListener("click", (event) => {
+      if (this.gameState !== "playing") {
+        return;
+      }
+
       const hitPoint = event.detail?.intersection?.point;
 
       if (hitPoint) {
@@ -467,6 +583,10 @@ AFRAME.registerComponent("flight-demo", {
   },
 
   updateTargetFromController() {
+    if (this.gameState !== "playing") {
+      return;
+    }
+
     const raycaster = this.rightHand?.components?.raycaster;
     const intersections = raycaster?.intersections || [];
     const navHit = intersections.find(
@@ -493,18 +613,31 @@ AFRAME.registerComponent("flight-demo", {
   },
 
   onTriggerPress() {
+    if (this.gameState !== "playing") {
+      return;
+    }
+
     if (!this.heldBoulder) {
       this.tryAcquireBoulder();
     }
   },
 
   onTriggerRelease() {
+    if (this.gameState !== "playing") {
+      return;
+    }
+
     if (this.heldBoulder) {
       this.launchHeldBoulder();
     }
   },
 
   pollTriggerControls() {
+    if (this.gameState !== "playing") {
+      this.wasTriggerPressed = false;
+      return;
+    }
+
     const trackedController =
       this.rightHand?.components?.["tracked-controls"]?.controller ||
       this.rightHand?.components?.["tracked-controls-webxr"]?.controller;
@@ -645,7 +778,11 @@ AFRAME.registerComponent("flight-demo", {
       this.shipShadow.object3D.scale.set(shadowStretch, 1, 1.04);
     }
 
-    if (this.tutorialStage === "steer" && this.tutorialSteer) {
+    if (
+      this.gameState === "playing" &&
+      this.tutorialStage === "steer" &&
+      this.tutorialSteer
+    ) {
       const steerTarget = this.tutorialSteer.object3D.position;
       const distanceToSteerGoal = this.shipPosition.distanceTo(steerTarget);
 
@@ -737,6 +874,7 @@ AFRAME.registerComponent("flight-demo", {
     this.tutorialStage = "done";
     this.tutorialThrowOutroTime = 0.32;
     this.enemySpawnCooldown = 0.75;
+    this.setStatus("Nice. Use boulders to knock down the invaders.");
   },
 
   hitEnemy(enemy) {
@@ -808,6 +946,7 @@ AFRAME.registerComponent("flight-demo", {
       }
 
       if (
+        this.gameState === "playing" &&
         this.tutorialStage === "throw" &&
         this.tutorialThrowTarget &&
         this.tutorialThrow?.getAttribute("visible")
@@ -856,6 +995,10 @@ AFRAME.registerComponent("flight-demo", {
   },
 
   updateEnemies(deltaSeconds) {
+    if (this.gameState !== "playing") {
+      return;
+    }
+
     this.enemies = this.enemies.filter((enemy) => {
       enemy.age += deltaSeconds;
 
@@ -883,17 +1026,40 @@ AFRAME.registerComponent("flight-demo", {
       return true;
     });
 
-    if (this.tutorialStage === "done" && !this.enemyWaveActive && this.enemySpawnCooldown <= 0) {
+    if (
+      this.tutorialStage === "done" &&
+      !this.enemyWaveActive &&
+      this.enemySpawnCooldown <= 0 &&
+      this.completedWaves < this.maxWaves &&
+      this.endCountdown <= 0
+    ) {
       this.spawnEnemyWave();
     }
 
     if (this.tutorialStage === "done" && this.enemyWaveActive && this.enemies.length === 0) {
       this.enemyWaveActive = false;
-      this.enemySpawnCooldown = 1.1;
+      this.completedWaves += 1;
+
+      if (this.completedWaves >= this.maxWaves) {
+        this.endCountdown = 1.15;
+      } else {
+        this.enemySpawnCooldown = 1.1;
+        this.setStatus(
+          `Wave ${this.completedWaves} cleared. ${this.maxWaves - this.completedWaves} to go.`
+        );
+      }
     }
 
     if (this.enemySpawnCooldown > 0) {
       this.enemySpawnCooldown = Math.max(this.enemySpawnCooldown - deltaSeconds, 0);
+    }
+
+    if (this.endCountdown > 0) {
+      this.endCountdown = Math.max(this.endCountdown - deltaSeconds, 0);
+
+      if (this.endCountdown === 0) {
+        this.finishGame();
+      }
     }
   },
 
@@ -932,10 +1098,21 @@ AFRAME.registerComponent("flight-demo", {
     }
   },
 
+  updateIdleFlight(timeSeconds) {
+    const idleX = Math.sin(timeSeconds * 0.8) * 2.2;
+    const idleZ = -2.4 - Math.cos(timeSeconds * 0.45) * 1.1;
+    this.shipTarget.set(idleX, 0.45, idleZ);
+  },
+
   tick(_time, delta) {
     const deltaSeconds = Math.min(delta / 1000, 0.05);
+    const timeSeconds = _time / 1000;
 
     try {
+      if (this.gameState !== "playing") {
+        this.updateIdleFlight(timeSeconds);
+      }
+
       this.updateTargetFromController();
       this.pollTriggerControls();
       this.updateShip(deltaSeconds);

@@ -35,6 +35,7 @@ Create a small experimental VR app that is easy to resume across different agent
 - The boulders have been reduced toward projectile scale, tractor pickup is being made more visibly readable, and release now uses a visible launched shot for clearer feedback
 - Added explicit asset cache-busting and a visible build label to diagnose Quest Browser serving stale JS/CSS
 - After the throw tutorial, the next loop is shifting to endless three-enemy waves so the boulder-launch mechanic becomes the core game loop
+- The prototype is now being wrapped in a cleaner session flow: title/start screen, two-wave play slice, and a short end screen that returns to start instead of running forever
 - Added basic in-page debug logging for runtime exceptions and fixed a scoped variable bug in the enemy-hit path that could freeze the app when releasing a shot into the enemy loop
 
 ## Why web first
@@ -48,7 +49,7 @@ Create a small experimental VR app that is easy to resume across different agent
 
 1. Test the new scrolling-flight motion on Quest 3.
 2. Tune the ship catch-up speed and tabletop playfield scale on-device.
-3. Verify that releasing into the enemy loop no longer freezes and that `Build: tractor4` appears in the overlay.
+3. Verify the new session flow: `Build: tractor5`, start screen interaction, two-wave cap, and end-screen restart.
 4. If another runtime issue appears, capture the on-screen debug message from the new debug panel.
 5. Tune the endless three-enemy wave loop once the tractor-and-throw feedback feels solid.
 

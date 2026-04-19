@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>vr-arne</title>
+    <title>UFO Catapult</title>
     <meta
       name="description"
       content="A small WebXR prototype for Meta Quest 3."
@@ -15,16 +15,14 @@
     />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <link rel="stylesheet" href="./styles.css?v=20260419-tractor4" />
-    <script defer src="./app.js?v=20260419-tractor4"></script>
+    <link rel="stylesheet" href="./styles.css?v=20260419-tractor5" />
+    <script defer src="./app.js?v=20260419-tractor5"></script>
   </head>
   <body>
     <div class="overlay">
-      <h1>vr-arne</h1>
-      <p>Build: tractor4</p>
-      <p>Point at the lane with your right controller.</p>
-      <p>The ship will glide toward your aim while the ground scrolls forward.</p>
-      <p>Hold the right trigger to tractor a boulder. Release to launch it.</p>
+      <h1>UFO Catapult</h1>
+      <p>Build: tractor5</p>
+      <p id="status-copy">Point at Start to begin.</p>
     </div>
     <div id="debug-panel" class="debug-panel" hidden>
       <strong>Debug</strong>
@@ -45,11 +43,13 @@
         <a-entity
           id="left-hand"
           laser-controls="hand: left"
+          cursor="rayOrigin: entity; fuse: false"
           raycaster="objects: .nav-surface, .interactable; far: 20"
         ></a-entity>
         <a-entity
           id="right-hand"
           laser-controls="hand: right"
+          cursor="rayOrigin: entity; fuse: false"
           raycaster="objects: .nav-surface, .interactable; far: 20"
         ></a-entity>
       </a-entity>
@@ -60,7 +60,97 @@
         position="1.5 4 1"
       ></a-entity>
 
-      <a-entity id="desktop-cursor" cursor="rayOrigin: mouse" raycaster="objects: .nav-surface"></a-entity>
+      <a-entity
+        id="desktop-cursor"
+        cursor="rayOrigin: mouse"
+        raycaster="objects: .nav-surface, .interactable"
+      ></a-entity>
+
+      <a-entity id="menu-panel" position="0 1.75 -2.45">
+        <a-plane
+          width="2.65"
+          height="1.55"
+          color="#f7fbff"
+          material="shader: flat; transparent: true; opacity: 0.92"
+        ></a-plane>
+        <a-text
+          value="UFO Catapult"
+          position="0 0.43 0.02"
+          align="center"
+          color="#17324d"
+          width="4.4"
+        ></a-text>
+        <a-text
+          value="Steer. Tractor a boulder. Sling it at invaders."
+          position="0 0.12 0.02"
+          align="center"
+          color="#355070"
+          width="3.6"
+          wrap-count="24"
+        ></a-text>
+        <a-entity
+          id="menu-start-button"
+          class="interactable"
+          position="0 -0.42 0.04"
+        >
+          <a-plane
+            width="1.1"
+            height="0.34"
+            color="#f4d35e"
+            material="shader: flat"
+          ></a-plane>
+          <a-text
+            value="Start"
+            align="center"
+            color="#17324d"
+            width="2.7"
+            position="0 -0.02 0.02"
+          ></a-text>
+        </a-entity>
+      </a-entity>
+
+      <a-entity id="end-panel" position="0 1.75 -2.45" visible="false">
+        <a-plane
+          width="2.8"
+          height="1.6"
+          color="#f7fbff"
+          material="shader: flat; transparent: true; opacity: 0.93"
+        ></a-plane>
+        <a-text
+          value="More Coming Soon"
+          position="0 0.42 0.02"
+          align="center"
+          color="#17324d"
+          width="4.2"
+        ></a-text>
+        <a-text
+          id="end-summary"
+          value="Two waves cleared."
+          position="0 0.11 0.02"
+          align="center"
+          color="#355070"
+          width="3.5"
+        ></a-text>
+        <a-entity
+          id="end-restart-button"
+          class="interactable"
+          position="0 -0.42 0.04"
+        >
+          <a-plane
+            width="1.4"
+            height="0.34"
+            color="#9fd3ff"
+            material="shader: flat"
+          ></a-plane>
+          <a-text
+            value="Back To Start"
+            align="center"
+            color="#17324d"
+            width="3"
+            position="0 -0.02 0.02"
+          ></a-text>
+        </a-entity>
+      </a-entity>
 
       <a-entity id="playfield" position="0 0 0" rotation="10 0 0">
         <a-plane
