@@ -32,6 +32,7 @@ Create a small experimental VR app that is easy to resume across different agent
 - The abstract field is being replaced with a looping pastoral scene using a meandering stream and varied lightweight trees, and the fire tutorial hit test now compares world-space positions
 - The fire tutorial target now counts down from 10 hits before playing a brief blow-away outro, and the pastoral terrain visuals have been made much more obvious
 - The core interaction is shifting from unlimited firing to a hold-to-tractor and release-to-throw boulder loop, with tutorial stages for movement, pickup, and a static throw target
+- The boulders have been reduced toward projectile scale, tractor pickup is being made more visibly readable, and release now uses a visible launched shot for clearer feedback
 
 ## Why web first
 
@@ -44,7 +45,7 @@ Create a small experimental VR app that is easy to resume across different agent
 
 1. Test the new scrolling-flight motion on Quest 3.
 2. Tune the ship catch-up speed and tabletop playfield scale on-device.
-3. Verify that holding trigger tractors up one nearby boulder and releasing launches it forward cleanly.
+3. Verify that holding trigger tractors up one nearby small boulder with readable suction motion and releasing launches a visible shot cleanly.
 4. Verify the three-step tutorial flow feels clear: move, pick up, throw at static target.
 5. Add the moving target variant once the base tractor-and-throw loop feels good.
 
@@ -83,3 +84,4 @@ Create a small experimental VR app that is easy to resume across different agent
 - Replaced the abstract scrolling markers with procedural pastoral terrain segments and corrected the tutorial fire-hit detection to use matching coordinate space.
 - Expanded the tutorial fire target into a 10-hit countdown objective with a quick outro and made the pastoral terrain much more visually pronounced.
 - Replaced the projectile-firing mechanic with a first tractor-and-throw boulder loop and retargeted the tutorial toward movement, pickup, and throwing.
+- Tightened the tractor-and-throw feedback by shrinking the pickup boulders and making release emit a clearly visible launched shot.

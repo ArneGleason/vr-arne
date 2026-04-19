@@ -32,6 +32,7 @@ AFRAME.registerComponent("flight-demo", {
     this.scrollSpeed = 3.8;
 
     this.boulders = [];
+    this.launchedShots = [];
     this.nextBoulderId = 1;
     this.heldBoulder = null;
     this.triggerHeld = false;
@@ -148,20 +149,20 @@ AFRAME.registerComponent("flight-demo", {
     const rockMain = document.createElement("a-sphere");
     const rockSide = document.createElement("a-sphere");
     const shadow = document.createElement("a-circle");
-    const scale = 0.26 + this.randomFromSeed(scaleSeed) * 0.16;
+    const scale = 0.09 + this.randomFromSeed(scaleSeed) * 0.05;
 
     boulder.object3D.position.set(x, 0.02, z);
     boulder.object3D.rotation.y = THREE.MathUtils.degToRad(
       this.randomFromSeed(scaleSeed + 8) * 360
     );
 
-    rockMain.setAttribute("position", "0 0.16 0");
+    rockMain.setAttribute("position", "0 0.055 0");
     rockMain.setAttribute("radius", `${scale}`);
     rockMain.setAttribute("scale", "1.18 0.84 1");
     rockMain.setAttribute("color", "#8e877d");
     rockMain.setAttribute("material", "shader: flat");
 
-    rockSide.setAttribute("position", `${scale * 0.32} 0.12 ${-scale * 0.14}`);
+    rockSide.setAttribute("position", `${scale * 0.32} 0.04 ${-scale * 0.14}`);
     rockSide.setAttribute("radius", `${scale * 0.52}`);
     rockSide.setAttribute("scale", "1 0.82 1.1");
     rockSide.setAttribute("color", "#a29a90");
@@ -169,7 +170,7 @@ AFRAME.registerComponent("flight-demo", {
 
     shadow.setAttribute("position", "0 0 0");
     shadow.setAttribute("rotation", "-90 0 0");
-    shadow.setAttribute("radius", `${scale * 0.88}`);
+    shadow.setAttribute("radius", `${scale * 1.2}`);
     shadow.setAttribute("color", "#2b3620");
     shadow.setAttribute("material", "shader: flat; transparent: true; opacity: 0.16");
 
@@ -184,6 +185,7 @@ AFRAME.registerComponent("flight-demo", {
       row,
       state: "ground",
       velocity: new THREE.Vector3(),
+      pickupProgress: 0,
       spin: new THREE.Vector3(
         (this.randomFromSeed(scaleSeed + 1) - 0.5) * 2,
         (this.randomFromSeed(scaleSeed + 2) - 0.5) * 4,
@@ -431,7 +433,8 @@ AFRAME.registerComponent("flight-demo", {
     this.dynamicRoot.object3D.worldToLocal(this.tempLocal.copy(worldPosition));
     bestBoulder.el.object3D.position.copy(this.tempLocal);
     this.dynamicRoot.appendChild(bestBoulder.el);
-    bestBoulder.state = "held";
+    bestBoulder.state = "tractoring";
+    bestBoulder.pickupProgress = 0;
     bestBoulder.velocity.set(0, 0, 0);
     this.heldBoulder = bestBoulder;
 
@@ -448,8 +451,50 @@ AFRAME.registerComponent("flight-demo", {
     }
 
     const lateralVelocity = this.shipPosition.x - this.previousShipPosition.x;
-    this.heldBoulder.state = "thrown";
-    this.heldBoulder.velocity.set(lateralVelocity * 22, 2.6, -10.8);
+    const heldPosition = this.heldBoulder.el.object3D.position.clone();
+    const projectile = document.createElement("a-entity");
+    const core = document.createElement("a-sphere");
+    const glow = document.createElement("a-sphere");
+    const groundGlow = document.createElement("a-circle");
+
+    projectile.object3D.position.copy(heldPosition);
+
+    core.setAttribute("radius", "0.09");
+    core.setAttribute("color", "#8e877d");
+    core.setAttribute("material", "shader: flat");
+
+    glow.setAttribute("radius", "0.16");
+    glow.setAttribute("color", "#a7f3ff");
+    glow.setAttribute(
+      "material",
+      "shader: flat; transparent: true; opacity: 0.22"
+    );
+
+    groundGlow.setAttribute("radius", "0.14");
+    groundGlow.setAttribute("rotation", "-90 0 0");
+    groundGlow.setAttribute("position", "0 -0.46 0");
+    groundGlow.setAttribute("color", "#a7f3ff");
+    groundGlow.setAttribute(
+      "material",
+      "shader: flat; transparent: true; opacity: 0.18"
+    );
+
+    projectile.appendChild(groundGlow);
+    projectile.appendChild(glow);
+    projectile.appendChild(core);
+    this.dynamicRoot.appendChild(projectile);
+
+    this.launchedShots.push({
+      el: projectile,
+      groundGlow,
+      velocity: new THREE.Vector3(lateralVelocity * 20, 1.8, -11.5),
+      lifetime: 1.5,
+    });
+
+    this.heldBoulder.el.remove();
+    this.boulders = this.boulders.filter(
+      (boulder) => boulder !== this.heldBoulder
+    );
     this.heldBoulder = null;
   },
 
@@ -522,12 +567,26 @@ AFRAME.registerComponent("flight-demo", {
 
     const holdTarget = new THREE.Vector3(
       this.shipPosition.x,
-      this.shipPosition.y - 0.27,
+      this.shipPosition.y - 0.25,
       this.shipPosition.z + 0.04
     );
     const currentPosition = this.heldBoulder.el.object3D.position;
-    const catchUp = 1 - Math.exp(-deltaSeconds * 8);
-    currentPosition.lerp(holdTarget, catchUp);
+
+    if (this.heldBoulder.state === "tractoring") {
+      this.heldBoulder.pickupProgress = Math.min(
+        this.heldBoulder.pickupProgress + deltaSeconds * 4.8,
+        1
+      );
+      currentPosition.lerp(holdTarget, this.heldBoulder.pickupProgress);
+
+      if (this.heldBoulder.pickupProgress >= 1) {
+        this.heldBoulder.state = "held";
+      }
+    } else {
+      const catchUp = 1 - Math.exp(-deltaSeconds * 10);
+      currentPosition.lerp(holdTarget, catchUp);
+    }
+
     this.heldBoulder.el.object3D.rotation.x += deltaSeconds * this.heldBoulder.spin.x;
     this.heldBoulder.el.object3D.rotation.y += deltaSeconds * this.heldBoulder.spin.y;
     this.heldBoulder.el.object3D.rotation.z += deltaSeconds * this.heldBoulder.spin.z;
@@ -606,6 +665,51 @@ AFRAME.registerComponent("flight-demo", {
     });
   },
 
+  updateLaunchedShots(deltaSeconds) {
+    this.launchedShots = this.launchedShots.filter((shot) => {
+      shot.lifetime -= deltaSeconds;
+      shot.el.object3D.position.addScaledVector(shot.velocity, deltaSeconds);
+      shot.velocity.y -= 4.8 * deltaSeconds;
+
+      if (shot.groundGlow) {
+        const remaining = Math.max(shot.lifetime / 1.5, 0);
+        shot.groundGlow.setAttribute(
+          "material",
+          `shader: flat; transparent: true; opacity: ${0.08 + remaining * 0.16}`
+        );
+      }
+
+      if (
+        this.tutorialStage === "throw" &&
+        this.tutorialThrowTarget &&
+        this.tutorialThrow?.getAttribute("visible")
+      ) {
+        const shotPosition = shot.el.object3D.getWorldPosition(this.tempWorldA);
+        const targetPosition = this.tutorialThrowTarget.object3D.getWorldPosition(
+          this.tempWorldB
+        );
+
+        if (shotPosition.distanceTo(targetPosition) < 0.55) {
+          shot.el.remove();
+          this.registerThrowHit();
+          return false;
+        }
+      }
+
+      const expired =
+        shot.lifetime <= 0 ||
+        shot.el.object3D.position.y < -0.4 ||
+        shot.el.object3D.position.z < this.bounds.minZ - 3;
+
+      if (expired) {
+        shot.el.remove();
+        return false;
+      }
+
+      return true;
+    });
+  },
+
   updateTutorialOutro(deltaSeconds) {
     if (this.tutorialThrowOutroTime <= 0 || !this.tutorialThrow) {
       return;
@@ -650,6 +754,7 @@ AFRAME.registerComponent("flight-demo", {
     this.updateGround(deltaSeconds);
     this.updateHeldBoulder(deltaSeconds);
     this.updateThrownBoulders(deltaSeconds);
+    this.updateLaunchedShots(deltaSeconds);
     this.updateTutorialOutro(deltaSeconds);
 
     if (this.targetMarker) {
