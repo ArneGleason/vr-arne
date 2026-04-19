@@ -30,6 +30,8 @@ AFRAME.registerComponent("flight-demo", {
     this.fireCooldownMs = 180;
     this.wasTriggerPressed = false;
     this.tutorialStage = "steer";
+    this.tempProjectileWorld = new THREE.Vector3();
+    this.tempTutorialWorld = new THREE.Vector3();
 
     this.buildGroundMarkers();
     this.bindDesktopControls();
@@ -38,37 +40,141 @@ AFRAME.registerComponent("flight-demo", {
   },
 
   buildGroundMarkers() {
-    const palette = ["#f7ede2", "#f4d35e", "#9ad1d4"];
     const rowCount = 16;
 
     for (let index = 0; index < rowCount; index += 1) {
       const row = document.createElement("a-entity");
-      const lanePositions = [-3.1, 0, 3.1];
-
       row.object3D.position.set(0, -0.1, this.bounds.maxZ - index * this.rowSpacing);
-
-      lanePositions.forEach((x, laneIndex) => {
-        const marker = document.createElement("a-box");
-        marker.setAttribute("position", `${x} 0 0`);
-        marker.setAttribute("width", laneIndex === 1 ? "0.75" : "0.52");
-        marker.setAttribute("height", "0.05");
-        marker.setAttribute("depth", "0.6");
-        marker.setAttribute("color", palette[(index + laneIndex) % palette.length]);
-        marker.setAttribute("material", "shader: flat");
-        row.appendChild(marker);
-      });
-
-      const centerStripe = document.createElement("a-box");
-      centerStripe.setAttribute("position", "0 0 -0.45");
-      centerStripe.setAttribute("width", "0.16");
-      centerStripe.setAttribute("height", "0.03");
-      centerStripe.setAttribute("depth", "0.55");
-      centerStripe.setAttribute("color", "#17324d");
-      centerStripe.setAttribute("material", "shader: flat");
-      row.appendChild(centerStripe);
+      row.dataset.segmentIndex = String(index);
+      this.populateRow(row, index);
 
       this.markerRoot.appendChild(row);
       this.scrollRows.push(row);
+    }
+  },
+
+  randomFromSeed(seed) {
+    const raw = Math.sin(seed * 127.1) * 43758.5453123;
+    return raw - Math.floor(raw);
+  },
+
+  streamCenterX(segmentIndex) {
+    return (
+      Math.sin(segmentIndex * 0.42) * 1.2 +
+      Math.sin(segmentIndex * 0.18 + 1.4) * 0.65
+    );
+  },
+
+  streamWidth(segmentIndex) {
+    return 1 + 0.28 * (Math.sin(segmentIndex * 0.37 + 0.8) + 1) * 0.5;
+  },
+
+  clearRow(row) {
+    while (row.firstChild) {
+      row.removeChild(row.firstChild);
+    }
+  },
+
+  createTree(segmentIndex, side, offsetIndex) {
+    const tree = document.createElement("a-entity");
+    const trunk = document.createElement("a-cylinder");
+    const canopyLow = document.createElement("a-sphere");
+    const canopyHigh = document.createElement("a-sphere");
+    const canopySide = document.createElement("a-sphere");
+    const scale = 0.7 + this.randomFromSeed(segmentIndex * 5.1 + offsetIndex) * 0.8;
+    const spread = 3.1 + this.randomFromSeed(segmentIndex * 3.7 + offsetIndex + 20) * 1.2;
+    const x = side * spread;
+    const z = (this.randomFromSeed(segmentIndex * 9.3 + offsetIndex + 7) - 0.5) * 0.55;
+    const yaw = this.randomFromSeed(segmentIndex * 2.6 + offsetIndex + 40) * 360;
+
+    tree.object3D.position.set(x, 0, z);
+    tree.object3D.rotation.y = THREE.MathUtils.degToRad(yaw);
+    tree.object3D.scale.setScalar(scale);
+
+    trunk.setAttribute("position", "0 0.2 0");
+    trunk.setAttribute("radius", "0.06");
+    trunk.setAttribute("height", "0.42");
+    trunk.setAttribute("color", "#7a5230");
+    trunk.setAttribute("material", "shader: flat");
+
+    canopyLow.setAttribute("position", "0 0.45 0");
+    canopyLow.setAttribute("radius", "0.2");
+    canopyLow.setAttribute("color", "#5d9d49");
+    canopyLow.setAttribute("material", "shader: flat");
+
+    canopyHigh.setAttribute("position", "0.02 0.62 0.03");
+    canopyHigh.setAttribute("radius", "0.16");
+    canopyHigh.setAttribute("color", "#74b65e");
+    canopyHigh.setAttribute("material", "shader: flat");
+
+    canopySide.setAttribute("position", "-0.1 0.5 0.02");
+    canopySide.setAttribute("radius", "0.14");
+    canopySide.setAttribute("color", "#4f8a40");
+    canopySide.setAttribute("material", "shader: flat");
+
+    tree.appendChild(trunk);
+    tree.appendChild(canopyLow);
+    tree.appendChild(canopyHigh);
+    tree.appendChild(canopySide);
+
+    return tree;
+  },
+
+  populateRow(row, segmentIndex) {
+    this.clearRow(row);
+
+    const stream = document.createElement("a-box");
+    const streamHighlight = document.createElement("a-box");
+    const meadowPatch = document.createElement("a-circle");
+    const centerX = this.streamCenterX(segmentIndex);
+    const width = this.streamWidth(segmentIndex);
+    const segmentDepth = this.rowSpacing * 1.3;
+
+    stream.setAttribute("position", `${centerX} 0.015 0`);
+    stream.setAttribute("width", `${width}`);
+    stream.setAttribute("height", "0.035");
+    stream.setAttribute("depth", `${segmentDepth}`);
+    stream.setAttribute("color", "#5fb6d9");
+    stream.setAttribute("material", "shader: flat");
+
+    streamHighlight.setAttribute(
+      "position",
+      `${centerX - width * 0.08} 0.03 ${-segmentDepth * 0.08}`
+    );
+    streamHighlight.setAttribute("width", `${width * 0.42}`);
+    streamHighlight.setAttribute("height", "0.008");
+    streamHighlight.setAttribute("depth", `${segmentDepth * 0.55}`);
+    streamHighlight.setAttribute("color", "#c8f1ff");
+    streamHighlight.setAttribute("material", "shader: flat; transparent: true; opacity: 0.5");
+
+    meadowPatch.setAttribute(
+      "position",
+      `${centerX + Math.sin(segmentIndex * 0.7) * 1.25} 0.012 ${(this.randomFromSeed(segmentIndex + 90) - 0.5) * 0.35}`
+    );
+    meadowPatch.setAttribute("rotation", "-90 0 0");
+    meadowPatch.setAttribute("radius", `${0.18 + this.randomFromSeed(segmentIndex + 33) * 0.24}`);
+    meadowPatch.setAttribute("color", "#77ad5a");
+    meadowPatch.setAttribute("material", "shader: flat; transparent: true; opacity: 0.55");
+
+    row.appendChild(stream);
+    row.appendChild(streamHighlight);
+    row.appendChild(meadowPatch);
+
+    const leftTreeCount = this.randomFromSeed(segmentIndex + 11) > 0.35 ? 1 : 0;
+    const rightTreeCount = this.randomFromSeed(segmentIndex + 17) > 0.28 ? 1 : 0;
+    const extraTree = this.randomFromSeed(segmentIndex + 29) > 0.72;
+
+    for (let index = 0; index < leftTreeCount; index += 1) {
+      row.appendChild(this.createTree(segmentIndex, -1, index));
+    }
+
+    for (let index = 0; index < rightTreeCount; index += 1) {
+      row.appendChild(this.createTree(segmentIndex, 1, index + 3));
+    }
+
+    if (extraTree) {
+      const side = this.randomFromSeed(segmentIndex + 51) > 0.5 ? -1 : 1;
+      row.appendChild(this.createTree(segmentIndex, side, 7));
     }
   },
 
@@ -271,6 +377,10 @@ AFRAME.registerComponent("flight-demo", {
 
       if (row.object3D.position.z > this.bounds.maxZ + this.rowSpacing) {
         row.object3D.position.z -= loopLength;
+        const nextSegmentIndex =
+          Number.parseInt(row.dataset.segmentIndex || "0", 10) + this.scrollRows.length;
+        row.dataset.segmentIndex = String(nextSegmentIndex);
+        this.populateRow(row, nextSegmentIndex);
       }
     });
   },
@@ -299,9 +409,11 @@ AFRAME.registerComponent("flight-demo", {
         this.tutorialFireTarget &&
         this.tutorialFire?.getAttribute("visible")
       ) {
-        const projectilePosition = projectile.el.object3D.position;
+        const projectilePosition = projectile.el.object3D.getWorldPosition(
+          this.tempProjectileWorld
+        );
         const fireTargetPosition = this.tutorialFireTarget.object3D.getWorldPosition(
-          new THREE.Vector3()
+          this.tempTutorialWorld
         );
 
         if (projectilePosition.distanceTo(fireTargetPosition) < 0.46) {

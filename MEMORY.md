@@ -29,6 +29,7 @@ Create a small experimental VR app that is easy to resume across different agent
 - Saucer proportions refined with a lower dome and shadow, and firing input made more robust with extra Quest button handling plus gamepad polling
 - Visual pass continues with the lower saucer band lifted slightly and projectile ground-glow decals added as cheap light spill
 - The helper text is evolving into a two-step in-world tutorial: steer to a marker first, then shoot a target to clear the second prompt
+- The abstract field is being replaced with a looping pastoral scene using a meandering stream and varied lightweight trees, and the fire tutorial hit test now compares world-space positions
 
 ## Why web first
 
@@ -41,8 +42,8 @@ Create a small experimental VR app that is easy to resume across different agent
 
 1. Test the new scrolling-flight motion on Quest 3.
 2. Tune the ship catch-up speed and tabletop playfield scale on-device.
-3. Verify trigger firing now works reliably on Quest 3, then tune projectile speed, size, and cadence.
-4. Verify the in-world tutorial sequence feels clear and unobtrusive.
+3. Verify the fire tutorial target now disappears reliably on projectile hit.
+4. Judge whether the pastoral stream-and-trees scenery feels readable and performant on Quest 3.
 5. Decide whether the projectile ground-glow effect looks good enough to keep from a performance and style perspective.
 
 ## Open questions
@@ -77,3 +78,4 @@ Create a small experimental VR app that is easy to resume across different agent
 - Lowered the saucer dome for a better UFO profile, added a simple ground shadow, and expanded firing input support for Quest controllers.
 - Lifted the inner saucer band so it reads above the rim and added a fake light spill under projectiles to test the look and performance.
 - Started replacing static instructions with a staged tutorial that responds to steering and firing.
+- Replaced the abstract scrolling markers with procedural pastoral terrain segments and corrected the tutorial fire-hit detection to use matching coordinate space.
