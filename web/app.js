@@ -8,6 +8,9 @@ AFRAME.registerComponent("flight-demo", {
     this.tutorialSteer = document.querySelector("#tutorial-steer");
     this.tutorialFire = document.querySelector("#tutorial-fire");
     this.tutorialFireTarget = document.querySelector("#tutorial-fire-target");
+    this.tutorialFireRing = document.querySelector("#tutorial-fire-ring");
+    this.tutorialFireCount = document.querySelector("#tutorial-fire-count");
+    this.tutorialFireText = document.querySelector("#tutorial-fire-text");
     this.markerRoot = document.querySelector("#ground-markers");
     this.projectileRoot = document.querySelector("#projectiles");
 
@@ -30,6 +33,8 @@ AFRAME.registerComponent("flight-demo", {
     this.fireCooldownMs = 180;
     this.wasTriggerPressed = false;
     this.tutorialStage = "steer";
+    this.tutorialFireHitsRemaining = 10;
+    this.tutorialFireOutroTime = 0;
     this.tempProjectileWorld = new THREE.Vector3();
     this.tempTutorialWorld = new THREE.Vector3();
 
@@ -81,8 +86,8 @@ AFRAME.registerComponent("flight-demo", {
     const canopyLow = document.createElement("a-sphere");
     const canopyHigh = document.createElement("a-sphere");
     const canopySide = document.createElement("a-sphere");
-    const scale = 0.7 + this.randomFromSeed(segmentIndex * 5.1 + offsetIndex) * 0.8;
-    const spread = 3.1 + this.randomFromSeed(segmentIndex * 3.7 + offsetIndex + 20) * 1.2;
+    const scale = 0.9 + this.randomFromSeed(segmentIndex * 5.1 + offsetIndex) * 1.1;
+    const spread = 3 + this.randomFromSeed(segmentIndex * 3.7 + offsetIndex + 20) * 1.35;
     const x = side * spread;
     const z = (this.randomFromSeed(segmentIndex * 9.3 + offsetIndex + 7) - 0.5) * 0.55;
     const yaw = this.randomFromSeed(segmentIndex * 2.6 + offsetIndex + 40) * 360;
@@ -91,25 +96,25 @@ AFRAME.registerComponent("flight-demo", {
     tree.object3D.rotation.y = THREE.MathUtils.degToRad(yaw);
     tree.object3D.scale.setScalar(scale);
 
-    trunk.setAttribute("position", "0 0.2 0");
+    trunk.setAttribute("position", "0 0.24 0");
     trunk.setAttribute("radius", "0.06");
-    trunk.setAttribute("height", "0.42");
+    trunk.setAttribute("height", "0.48");
     trunk.setAttribute("color", "#7a5230");
     trunk.setAttribute("material", "shader: flat");
 
-    canopyLow.setAttribute("position", "0 0.45 0");
-    canopyLow.setAttribute("radius", "0.2");
-    canopyLow.setAttribute("color", "#5d9d49");
+    canopyLow.setAttribute("position", "0 0.5 0");
+    canopyLow.setAttribute("radius", "0.22");
+    canopyLow.setAttribute("color", "#5a9940");
     canopyLow.setAttribute("material", "shader: flat");
 
-    canopyHigh.setAttribute("position", "0.02 0.62 0.03");
-    canopyHigh.setAttribute("radius", "0.16");
-    canopyHigh.setAttribute("color", "#74b65e");
+    canopyHigh.setAttribute("position", "0.03 0.72 0.03");
+    canopyHigh.setAttribute("radius", "0.19");
+    canopyHigh.setAttribute("color", "#7cbc60");
     canopyHigh.setAttribute("material", "shader: flat");
 
-    canopySide.setAttribute("position", "-0.1 0.5 0.02");
-    canopySide.setAttribute("radius", "0.14");
-    canopySide.setAttribute("color", "#4f8a40");
+    canopySide.setAttribute("position", "-0.11 0.56 0.02");
+    canopySide.setAttribute("radius", "0.17");
+    canopySide.setAttribute("color", "#4d853a");
     canopySide.setAttribute("material", "shader: flat");
 
     tree.appendChild(trunk);
@@ -125,24 +130,46 @@ AFRAME.registerComponent("flight-demo", {
 
     const stream = document.createElement("a-box");
     const streamHighlight = document.createElement("a-box");
+    const streamBankLeft = document.createElement("a-box");
+    const streamBankRight = document.createElement("a-box");
     const meadowPatch = document.createElement("a-circle");
     const centerX = this.streamCenterX(segmentIndex);
     const width = this.streamWidth(segmentIndex);
     const segmentDepth = this.rowSpacing * 1.3;
 
-    stream.setAttribute("position", `${centerX} 0.015 0`);
+    stream.setAttribute("position", `${centerX} 0.018 0`);
     stream.setAttribute("width", `${width}`);
-    stream.setAttribute("height", "0.035");
+    stream.setAttribute("height", "0.045");
     stream.setAttribute("depth", `${segmentDepth}`);
     stream.setAttribute("color", "#5fb6d9");
     stream.setAttribute("material", "shader: flat");
 
+    streamBankLeft.setAttribute(
+      "position",
+      `${centerX - width * 0.58} 0.016 0`
+    );
+    streamBankLeft.setAttribute("width", `${width * 0.3}`);
+    streamBankLeft.setAttribute("height", "0.015");
+    streamBankLeft.setAttribute("depth", `${segmentDepth * 1.05}`);
+    streamBankLeft.setAttribute("color", "#8bb56b");
+    streamBankLeft.setAttribute("material", "shader: flat");
+
+    streamBankRight.setAttribute(
+      "position",
+      `${centerX + width * 0.58} 0.016 0`
+    );
+    streamBankRight.setAttribute("width", `${width * 0.3}`);
+    streamBankRight.setAttribute("height", "0.015");
+    streamBankRight.setAttribute("depth", `${segmentDepth * 1.05}`);
+    streamBankRight.setAttribute("color", "#8bb56b");
+    streamBankRight.setAttribute("material", "shader: flat");
+
     streamHighlight.setAttribute(
       "position",
-      `${centerX - width * 0.08} 0.03 ${-segmentDepth * 0.08}`
+      `${centerX - width * 0.08} 0.038 ${-segmentDepth * 0.08}`
     );
     streamHighlight.setAttribute("width", `${width * 0.42}`);
-    streamHighlight.setAttribute("height", "0.008");
+    streamHighlight.setAttribute("height", "0.01");
     streamHighlight.setAttribute("depth", `${segmentDepth * 0.55}`);
     streamHighlight.setAttribute("color", "#c8f1ff");
     streamHighlight.setAttribute("material", "shader: flat; transparent: true; opacity: 0.5");
@@ -157,6 +184,8 @@ AFRAME.registerComponent("flight-demo", {
     meadowPatch.setAttribute("material", "shader: flat; transparent: true; opacity: 0.55");
 
     row.appendChild(stream);
+    row.appendChild(streamBankLeft);
+    row.appendChild(streamBankRight);
     row.appendChild(streamHighlight);
     row.appendChild(meadowPatch);
 
@@ -294,6 +323,36 @@ AFRAME.registerComponent("flight-demo", {
     }
   },
 
+  registerTutorialFireHit() {
+    if (this.tutorialStage !== "fire" || !this.tutorialFire) {
+      return;
+    }
+
+    this.tutorialFireHitsRemaining -= 1;
+
+    if (this.tutorialFireCount) {
+      this.tutorialFireCount.setAttribute(
+        "value",
+        `${Math.max(this.tutorialFireHitsRemaining, 0)}`
+      );
+    }
+
+    if (this.tutorialFireTarget) {
+      const flashScale =
+        1 + (10 - Math.max(this.tutorialFireHitsRemaining, 0)) * 0.015;
+      this.tutorialFireTarget.object3D.scale.set(
+        flashScale,
+        flashScale,
+        flashScale
+      );
+    }
+
+    if (this.tutorialFireHitsRemaining <= 0) {
+      this.tutorialStage = "done";
+      this.tutorialFireOutroTime = 0.32;
+    }
+  },
+
   pollFireControls() {
     const trackedController =
       this.rightHand?.components?.["tracked-controls"]?.controller ||
@@ -417,8 +476,8 @@ AFRAME.registerComponent("flight-demo", {
         );
 
         if (projectilePosition.distanceTo(fireTargetPosition) < 0.46) {
-          this.tutorialStage = "done";
-          this.tutorialFire.setAttribute("visible", "false");
+          projectile.lifetime = 0;
+          this.registerTutorialFireHit();
         }
       }
 
@@ -447,6 +506,41 @@ AFRAME.registerComponent("flight-demo", {
     if (this.targetMarker) {
       const pulse = 1 + Math.sin(time / 180) * 0.08;
       this.targetMarker.object3D.scale.set(pulse, pulse, pulse);
+    }
+
+    if (this.tutorialFireOutroTime > 0 && this.tutorialFire) {
+      this.tutorialFireOutroTime = Math.max(this.tutorialFireOutroTime - deltaSeconds, 0);
+      const progress = 1 - this.tutorialFireOutroTime / 0.32;
+      const scale = 1 + progress * 1.2;
+      this.tutorialFire.object3D.scale.set(scale, scale, scale);
+
+      const opacity = Math.max(1 - progress, 0);
+
+      if (this.tutorialFireTarget) {
+        this.tutorialFireTarget.setAttribute(
+          "material",
+          `shader: flat; emissive: #7fe7ff; emissiveIntensity: ${0.85 + progress * 0.4}; transparent: true; opacity: ${opacity}`
+        );
+      }
+
+      if (this.tutorialFireRing) {
+        this.tutorialFireRing.setAttribute(
+          "material",
+          `shader: flat; transparent: true; opacity: ${opacity}`
+        );
+      }
+
+      if (this.tutorialFireCount) {
+        this.tutorialFireCount.setAttribute("opacity", `${opacity}`);
+      }
+
+      if (this.tutorialFireText) {
+        this.tutorialFireText.setAttribute("opacity", `${opacity}`);
+      }
+
+      if (this.tutorialFireOutroTime === 0) {
+        this.tutorialFire.setAttribute("visible", "false");
+      }
     }
   },
 });
