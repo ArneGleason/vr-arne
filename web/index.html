@@ -100,35 +100,44 @@
           ></a-ring>
         </a-entity>
 
+        <a-circle
+          id="ship-shadow"
+          position="0 -0.11 -2.2"
+          rotation="-90 0 0"
+          radius="0.4"
+          color="#102030"
+          material="shader: flat; transparent: true; opacity: 0.2"
+        ></a-circle>
+
         <a-entity id="ship" position="0 0.45 -2.2">
           <a-cylinder
-            position="0 0.03 0"
+            position="0 0.015 0"
             radius="0.42"
-            height="0.1"
+            height="0.065"
             color="#c3ceda"
             material="metalness: 0.8; roughness: 0.25; color: #c3ceda"
           ></a-cylinder>
           <a-sphere
-            position="0 0.15 0.02"
+            position="0 0.085 0.02"
             radius="0.16"
             color="#9fd3ff"
             material="metalness: 0.35; roughness: 0.15; emissive: #2f5f85; emissiveIntensity: 0.35"
           ></a-sphere>
           <a-cylinder
-            position="0 -0.02 0"
+            position="0 -0.025 0"
             radius="0.3"
-            height="0.08"
+            height="0.05"
             color="#8e9aa8"
             material="metalness: 0.75; roughness: 0.3; color: #8e9aa8"
           ></a-cylinder>
           <a-sphere
-            position="-0.22 0.01 0.1"
+            position="-0.22 -0.005 0.1"
             radius="0.04"
             color="#f4d35e"
             material="shader: flat"
           ></a-sphere>
           <a-sphere
-            position="0.22 0.01 0.1"
+            position="0.22 -0.005 0.1"
             radius="0.04"
             color="#f4d35e"
             material="shader: flat"

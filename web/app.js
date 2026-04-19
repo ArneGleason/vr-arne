@@ -3,6 +3,7 @@ AFRAME.registerComponent("flight-demo", {
     this.rightHand = document.querySelector("#right-hand");
     this.navSurface = document.querySelector("#nav-surface");
     this.ship = document.querySelector("#ship");
+    this.shipShadow = document.querySelector("#ship-shadow");
     this.targetMarker = document.querySelector("#target-marker");
     this.markerRoot = document.querySelector("#ground-markers");
     this.projectileRoot = document.querySelector("#projectiles");
@@ -24,6 +25,7 @@ AFRAME.registerComponent("flight-demo", {
     this.projectiles = [];
     this.lastFireTime = 0;
     this.fireCooldownMs = 180;
+    this.wasTriggerPressed = false;
 
     this.buildGroundMarkers();
     this.bindDesktopControls();
@@ -82,8 +84,19 @@ AFRAME.registerComponent("flight-demo", {
 
   bindFireControls() {
     if (this.rightHand) {
-      this.rightHand.addEventListener("triggerdown", () => {
-        this.fireProjectile();
+      [
+        "triggerdown",
+        "mousedown",
+        "abuttondown",
+        "bbuttondown",
+        "xbuttondown",
+        "ybuttondown",
+        "gripdown",
+        "thumbstickdown",
+      ].forEach((eventName) => {
+        this.rightHand.addEventListener(eventName, () => {
+          this.fireProjectile();
+        });
       });
     }
 
@@ -144,6 +157,34 @@ AFRAME.registerComponent("flight-demo", {
       0,
       THREE.MathUtils.degToRad(lateralVelocity * -220)
     );
+
+    if (this.shipShadow) {
+      this.shipShadow.object3D.position.set(
+        this.shipPosition.x,
+        -0.11,
+        this.shipPosition.z + 0.02
+      );
+
+      const shadowStretch = 1 + Math.min(Math.abs(lateralVelocity) * 8, 0.18);
+      this.shipShadow.object3D.scale.set(shadowStretch, 1, 1.04);
+    }
+  },
+
+  pollFireControls() {
+    const trackedController =
+      this.rightHand?.components?.["tracked-controls"]?.controller ||
+      this.rightHand?.components?.["tracked-controls-webxr"]?.controller;
+    const gamepad = trackedController?.gamepad;
+    const buttons = gamepad?.buttons;
+    const triggerPressed = Boolean(
+      buttons?.[0]?.pressed || buttons?.[1]?.pressed || buttons?.[4]?.pressed
+    );
+
+    if (triggerPressed && !this.wasTriggerPressed) {
+      this.fireProjectile();
+    }
+
+    this.wasTriggerPressed = triggerPressed;
   },
 
   fireProjectile() {
@@ -229,6 +270,7 @@ AFRAME.registerComponent("flight-demo", {
     const deltaSeconds = Math.min(delta / 1000, 0.05);
 
     this.updateTargetFromController();
+    this.pollFireControls();
     this.updateShip(deltaSeconds);
     this.updateGround(deltaSeconds);
     this.updateProjectiles(deltaSeconds);
