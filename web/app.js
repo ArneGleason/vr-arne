@@ -27,8 +27,72 @@ window.addEventListener("unhandledrejection", (event) => {
   reportDebug(`Promise rejection: ${reason}`);
 });
 
+AFRAME.registerComponent("rounded-plate", {
+  schema: {
+    width: { type: "number", default: 1 },
+    height: { type: "number", default: 0.5 },
+    radius: { type: "number", default: 0.08 },
+    color: { type: "color", default: "#ffffff" },
+    opacity: { type: "number", default: 1 },
+  },
+
+  init() {
+    const { width, height, radius, color, opacity } = this.data;
+    const innerWidth = Math.max(width - radius * 2, 0.01);
+    const innerHeight = Math.max(height - radius * 2, 0.01);
+    const material = `shader: flat; color: ${color}; transparent: ${opacity < 1}; opacity: ${opacity}`;
+    const isInteractable = this.el.classList.contains("interactable");
+    const parts = [
+      {
+        primitive: "a-plane",
+        attrs: { width: innerWidth, height },
+      },
+      {
+        primitive: "a-plane",
+        attrs: { width, height: innerHeight },
+      },
+      {
+        primitive: "a-circle",
+        attrs: { radius },
+        position: [-innerWidth / 2, innerHeight / 2, 0],
+      },
+      {
+        primitive: "a-circle",
+        attrs: { radius },
+        position: [innerWidth / 2, innerHeight / 2, 0],
+      },
+      {
+        primitive: "a-circle",
+        attrs: { radius },
+        position: [-innerWidth / 2, -innerHeight / 2, 0],
+      },
+      {
+        primitive: "a-circle",
+        attrs: { radius },
+        position: [innerWidth / 2, -innerHeight / 2, 0],
+      },
+    ];
+
+    parts.forEach((part) => {
+      const child = document.createElement(part.primitive);
+      Object.entries(part.attrs).forEach(([key, value]) => {
+        child.setAttribute(key, `${value}`);
+      });
+      child.setAttribute("material", material);
+      if (isInteractable) {
+        child.classList.add("interactable");
+      }
+      if (part.position) {
+        child.object3D.position.set(...part.position);
+      }
+      this.el.appendChild(child);
+    });
+  },
+});
+
 AFRAME.registerComponent("flight-demo", {
   init() {
+    this.leftHand = document.querySelector("#left-hand");
     this.rightHand = document.querySelector("#right-hand");
     this.navSurface = document.querySelector("#nav-surface");
     this.playfield = document.querySelector("#playfield");
@@ -101,6 +165,42 @@ AFRAME.registerComponent("flight-demo", {
   bindMenuButtons() {
     this.menuStartButton?.addEventListener("click", () => this.startGame());
     this.endRestartButton?.addEventListener("click", () => this.showMenu());
+  },
+
+  activateMenuAction(action) {
+    if (action === "start" && this.gameState === "menu") {
+      this.startGame();
+      return;
+    }
+
+    if (action === "restart" && this.gameState === "ending") {
+      this.showMenu();
+    }
+  },
+
+  resolveInteractableTarget(intersection) {
+    const hitEl = intersection?.object?.el;
+    return hitEl?.closest?.("[data-action]") || null;
+  },
+
+  triggerMenuSelection(handEl) {
+    if (this.gameState === "playing") {
+      return false;
+    }
+
+    const raycaster = handEl?.components?.raycaster;
+    const intersections = raycaster?.intersections || [];
+    const target = intersections
+      .map((intersection) => this.resolveInteractableTarget(intersection))
+      .find(Boolean);
+
+    if (!target) {
+      return false;
+    }
+
+    const action = target.getAttribute("data-action");
+    this.activateMenuAction(action);
+    return true;
   },
 
   setStatus(message) {
@@ -543,15 +643,31 @@ AFRAME.registerComponent("flight-demo", {
   },
 
   bindTriggerEvents() {
-    if (this.rightHand) {
-      ["triggerdown", "mousedown", "gripdown"].forEach((eventName) => {
-        this.rightHand.addEventListener(eventName, () => this.setTriggerHeld(true));
+    [this.leftHand, this.rightHand].forEach((handEl) => {
+      if (!handEl) {
+        return;
+      }
+
+      ["triggerdown", "gripdown", "abuttondown", "xbuttondown"].forEach((eventName) => {
+        handEl.addEventListener(eventName, () => {
+          if (this.triggerMenuSelection(handEl)) {
+            return;
+          }
+
+          if (handEl === this.rightHand) {
+            this.setTriggerHeld(true);
+          }
+        });
       });
 
-      ["triggerup", "mouseup", "gripup"].forEach((eventName) => {
-        this.rightHand.addEventListener(eventName, () => this.setTriggerHeld(false));
+      ["triggerup", "gripup", "abuttonup", "xbuttonup"].forEach((eventName) => {
+        handEl.addEventListener(eventName, () => {
+          if (handEl === this.rightHand) {
+            this.setTriggerHeld(false);
+          }
+        });
       });
-    }
+    });
 
     window.addEventListener("keydown", (event) => {
       if (event.code === "Space") {

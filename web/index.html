@@ -15,13 +15,13 @@
     />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <link rel="stylesheet" href="./styles.css?v=20260419-tractor5" />
-    <script defer src="./app.js?v=20260419-tractor5"></script>
+    <link rel="stylesheet" href="./styles.css?v=20260419-tractor6" />
+    <script defer src="./app.js?v=20260419-tractor6"></script>
   </head>
   <body>
     <div class="overlay">
       <h1>UFO Catapult</h1>
-      <p>Build: tractor5</p>
+      <p>Build: tractor6</p>
       <p id="status-copy">Point at Start to begin.</p>
     </div>
     <div id="debug-panel" class="debug-panel" hidden>
@@ -67,12 +67,9 @@
       ></a-entity>
 
       <a-entity id="menu-panel" position="0 1.75 -2.45">
-        <a-plane
-          width="2.65"
-          height="1.55"
-          color="#f7fbff"
-          material="shader: flat; transparent: true; opacity: 0.92"
-        ></a-plane>
+        <a-entity
+          rounded-plate="width: 2.65; height: 1.55; radius: 0.14; color: #f7fbff; opacity: 0.92"
+        ></a-entity>
         <a-text
           value="UFO Catapult"
           position="0 0.43 0.02"
@@ -91,14 +88,13 @@
         <a-entity
           id="menu-start-button"
           class="interactable"
+          data-action="start"
           position="0 -0.42 0.04"
         >
-          <a-plane
-            width="1.1"
-            height="0.34"
-            color="#f4d35e"
-            material="shader: flat"
-          ></a-plane>
+          <a-entity
+            class="interactable"
+            rounded-plate="width: 1.1; height: 0.34; radius: 0.11; color: #f4d35e"
+          ></a-entity>
           <a-text
             value="Start"
             align="center"
@@ -110,12 +106,9 @@
       </a-entity>
 
       <a-entity id="end-panel" position="0 1.75 -2.45" visible="false">
-        <a-plane
-          width="2.8"
-          height="1.6"
-          color="#f7fbff"
-          material="shader: flat; transparent: true; opacity: 0.93"
-        ></a-plane>
+        <a-entity
+          rounded-plate="width: 2.8; height: 1.6; radius: 0.14; color: #f7fbff; opacity: 0.93"
+        ></a-entity>
         <a-text
           value="More Coming Soon"
           position="0 0.42 0.02"
@@ -134,14 +127,13 @@
         <a-entity
           id="end-restart-button"
           class="interactable"
+          data-action="restart"
           position="0 -0.42 0.04"
         >
-          <a-plane
-            width="1.4"
-            height="0.34"
-            color="#9fd3ff"
-            material="shader: flat"
-          ></a-plane>
+          <a-entity
+            class="interactable"
+            rounded-plate="width: 1.4; height: 0.34; radius: 0.11; color: #9fd3ff"
+          ></a-entity>
           <a-text
             value="Back To Start"
             align="center"
