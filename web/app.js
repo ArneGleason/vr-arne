@@ -203,6 +203,7 @@ AFRAME.registerComponent("flight-demo", {
     const projectile = document.createElement("a-entity");
     const bolt = document.createElement("a-sphere");
     const glow = document.createElement("a-sphere");
+    const groundGlow = document.createElement("a-circle");
 
     projectile.object3D.position.copy(this.ship.object3D.position);
     projectile.object3D.position.y += 0.08;
@@ -222,12 +223,23 @@ AFRAME.registerComponent("flight-demo", {
       "shader: flat; transparent: true; opacity: 0.28"
     );
 
+    groundGlow.setAttribute("radius", "0.18");
+    groundGlow.setAttribute("rotation", "-90 0 0");
+    groundGlow.setAttribute("position", "0 -0.5 0");
+    groundGlow.setAttribute("color", "#a7f3ff");
+    groundGlow.setAttribute(
+      "material",
+      "shader: flat; transparent: true; opacity: 0.22"
+    );
+
+    projectile.appendChild(groundGlow);
     projectile.appendChild(glow);
     projectile.appendChild(bolt);
     this.projectileRoot.appendChild(projectile);
 
     this.projectiles.push({
       el: projectile,
+      groundGlow,
       velocity: new THREE.Vector3(0, 0, -10.5),
       lifetime: 1.6,
     });
@@ -252,6 +264,17 @@ AFRAME.registerComponent("flight-demo", {
         projectile.velocity,
         deltaSeconds
       );
+
+      if (projectile.groundGlow) {
+        const remaining = Math.max(projectile.lifetime / 1.6, 0);
+        projectile.groundGlow.object3D.position.y = -0.5;
+        projectile.groundGlow.setAttribute(
+          "material",
+          `shader: flat; transparent: true; opacity: ${0.1 + remaining * 0.18}`
+        );
+        const glowScale = 0.9 + (1 - remaining) * 0.6;
+        projectile.groundGlow.object3D.scale.set(glowScale, glowScale, glowScale);
+      }
 
       const expired =
         projectile.lifetime <= 0 ||
